@@ -3,9 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://allanvictorsantos.github.io/Recycle-me/",
-
-
+  "homepage": "https://allanvictorsantos.github.io/recycle-me/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -18,6 +16,7 @@
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.4",
     "swiper": "^12.0.2"
   },
   "devDependencies": {

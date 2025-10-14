@@ -1,5 +1,6 @@
 // FASE 1: Importações
 import express from "express";
+import cors from 'cors'; 
 import userRoutes from './interface/routes/user.routes.js';
 import authRoutes from './interface/routes/auth.routes.js';
 import marketRoutes from './interface/routes/market.routes.js'; // NOVO: Importamos o marketRoutes
@@ -8,6 +9,7 @@ import marketRoutes from './interface/routes/market.routes.js'; // NOVO: Importa
 const app = express();
 const port = 3000;
 app.use(express.json());
+app.use(cors());
 
 // FASE 3: Plugando as Rotas
 app.use('/users', userRoutes);
