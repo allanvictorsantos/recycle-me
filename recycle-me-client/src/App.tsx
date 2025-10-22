@@ -1,21 +1,29 @@
+// src/App.tsx
+
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import HashLink from './components/HashLink.tsx';
 import ScrollToTop from './components/ScrollToTop.tsx';
 import './App.css';
 
+// --- PASSO 1: IMPORTAR O useAuth ---
+import { useAuth } from './context/AuthContext'; // (Verifique o caminho se necessário)
+
 function App() {
-  // --- ESTADOS (A "MEMÓRIA" DO NOSSO COMPONENTE) ---
+  // --- PASSO 2: PEGAR O ESTADO DE AUTENTICAÇÃO E A FUNÇÃO LOGOUT ---
+  const { isAuthenticated, logout } = useAuth();
+
+  // --- O RESTO DOS SEUS ESTADOS (continua 100% igual) ---
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccessibilityPanelOpen, setAccessibilityPanelOpen] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'auto');
   const [isReadingMode, setReadingMode] = useState(false);
   const [isBackToTopVisible, setBackToTopVisible] = useState(false);
 
-  // --- REFERÊNCIAS (CONEXÃO DIRETA COM ELEMENTOS) ---
+  // --- REFERÊNCIAS (continua 100% igual) ---
   const accessibilityPanelRef = useRef<HTMLDivElement>(null);
 
-  // --- FUNÇÕES (AS "AÇÕES" QUE MUDAM A MEMÓRIA) ---
+  // --- FUNÇÕES (continua 100% igual) ---
   const toggleMobileMenu = () => setIsMobileMenuOpen(prev => !prev);
   const toggleAccessibilityPanel = () => setAccessibilityPanelOpen(prev => !prev);
   const toggleReadingMode = () => setReadingMode(prev => !prev);
@@ -32,8 +40,8 @@ function App() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
-  // --- EFEITOS COLATERAIS (LÓGICA QUE RODA EM RESPOSTA A MUDANÇAS) ---
+
+  // --- EFEITOS COLATERAIS (continua 100% igual) ---
 
   // Efeito para aplicar o tema (claro/escuro)
   useEffect(() => {
@@ -67,31 +75,61 @@ function App() {
     <>
       <ScrollToTop />
       <div id="page-wrapper" className={`bg-brand-cream dark:bg-brand-dark text-brand-dark dark:text-gray-300 transition duration-300 ${isReadingMode ? 'reading-mode' : ''}`}>
-        
+
         <header className="header-gradient dark:bg-gray-800 shadow-sm sticky top-0 z-50 dark:border-b dark:border-gray-700">
           <div className="container mx-auto flex justify-between items-center p-4">
-            <Link to="/" className="text-xl font-extrabold tracking-tighter dark:text-white">♻️ RECYCLE_ME</Link>
+            <Link to="/" className="text-xl font-extrabold tracking-tighter dark:text-white">RECYCLE_ME</Link>
+
+            {/* --- PASSO 3.1: NAVEGAÇÃO DESKTOP CONDICIONAL --- */}
             <nav id="main-nav" className="hidden md:flex items-center gap-8">
               <HashLink to="clube-recycleme" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>O Clube</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></HashLink>
               <HashLink to="como-funciona" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Como Funciona</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></HashLink>
               <HashLink to="o-que-reciclar" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>O que reciclar</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></HashLink>
               <HashLink to="sobre-nos" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Sobre Nós</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></HashLink>
-              <Link to="/login" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Login</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></Link>
+
+              {!isAuthenticated ? (
+                // SE NÃO ESTIVER LOGADO
+                <Link to="/login" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Login</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></Link>
+              ) : (
+                // SE ESTIVER LOGADO
+                <>
+                  <Link to="/mapa" className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Mapa</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></Link>
+                  <button onClick={logout} className="nav-link relative group text-sm font-bold uppercase pb-2 transition-colors hover:text-brand-text-green dark:text-gray-300 dark:hover:text-brand-green"><span>Sair</span><span className="underline-span absolute bottom-0 left-0 w-0 h-0.5 bg-brand-text-green dark:bg-brand-green transition-all duration-300 group-hover:w-full"></span></button>
+                </>
+              )}
             </nav>
             <div className="flex items-center gap-4">
-              <Link to="/login" className="text-2xl hover:text-brand-text-green transition-colors dark:text-gray-300 dark:hover:text-brand-green"><i className="fas fa-user-circle"></i></Link>
+
+              {/* --- PASSO 3.2: ÍCONE DE USUÁRIO/MAPA CONDICIONAL --- */}
+              {!isAuthenticated ? (
+                <Link to="/login" title="Acessar conta" className="text-2xl hover:text-brand-text-green transition-colors dark:text-gray-300 dark:hover:text-brand-green"><i className="fas fa-user-circle"></i></Link>
+              ) : (
+                <Link to="/mapa" title="Acessar mapa" className="text-2xl hover:text-brand-text-green transition-colors dark:text-gray-300 dark:hover:text-brand-green"><i className="fas fa-map-marked-alt"></i></Link>
+              )}
+
               <button id="mobile-menu-button" onClick={toggleMobileMenu} className="md:hidden text-2xl dark:text-gray-300"><i className="fas fa-bars"></i></button>
             </div>
           </div>
+
+          {/* --- PASSO 3.3: NAVEGAÇÃO MOBILE CONDICIONAL --- */}
           <div id="mobile-menu" className={`md:hidden bg-brand-cream dark:bg-gray-800 pb-4 ${isMobileMenuOpen ? '' : 'hidden'}`}>
             <HashLink to="clube-recycleme" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">O Clube</HashLink>
             <HashLink to="como-funciona" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Como Funciona</HashLink>
             <HashLink to="o-que-reciclar" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">O que reciclar</HashLink>
             <HashLink to="sobre-nos" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Sobre Nós</HashLink>
-            <Link to="/login" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Login</Link>
+
+            {!isAuthenticated ? (
+              <Link to="/login" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Login</Link>
+            ) : (
+              <>
+                <Link to="/mapa" className="block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Mapa</Link>
+                <button onClick={() => { logout(); toggleMobileMenu(); }} className="w-full block text-center py-2 px-4 text-sm font-bold uppercase text-brand-dark dark:text-gray-200 hover:bg-brand-light-green dark:hover:bg-gray-700">Sair</button>
+              </>
+            )}
           </div>
         </header>
 
+        {/* O <Outlet> continua aqui, perfeito! */}
         <Outlet />
 
         <footer className="bg-gray-900 text-white">
@@ -124,7 +162,7 @@ function App() {
           </div>
         </footer>
       </div>
-      
+
       <button id="back-to-top-button" onClick={scrollToTop} title="Voltar ao topo" className={`fixed bottom-20 right-5 z-[60] w-14 h-14 bg-brand-dark/80 backdrop-blur-sm text-white rounded-full shadow-lg flex items-center justify-center text-xl hover:bg-gray-700 transition-all ${isBackToTopVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <i className="fas fa-arrow-up"></i>
       </button>
@@ -161,4 +199,3 @@ function App() {
 }
 
 export default App;
-

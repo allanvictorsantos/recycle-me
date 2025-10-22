@@ -1,79 +1,78 @@
 import { useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom'; // Importamos useLocation e Link
-import Swiper from 'swiper';
+import { useLocation, Link } from 'react-router-dom';
+
+// NOVAS IMPORTAÇÕES: Importamos os componentes do Swiper para React
+import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+
+// Os estilos continuam os mesmos
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 function HomePage() {
   const location = useLocation();
 
-  // Efeito para o Swiper (Carrossel)
+  // Efeito que "ouve" por recados de rolagem (continua igual)
   useEffect(() => {
-    // É uma boa prática verificar se o elemento existe antes de inicializar
-    const swiperEl = document.querySelector('.swiper-container');
-    let swiper: Swiper | null = null;
-    if (swiperEl) {
-      swiper = new Swiper('.swiper-container', {
-        modules: [Navigation, Pagination, Autoplay],
-        loop: true,
-        autoplay: { delay: 7000, disableOnInteraction: false },
-        pagination: { el: '.swiper-pagination-custom', clickable: true },
-        navigation: {
-          nextEl: '.swiper-button-next-custom',
-          prevEl: '.swiper-button-prev-custom',
-        },
-      });
-    }
-    
-    // Limpeza: Destrói a instância do Swiper quando o componente é desmontado
-    return () => {
-      swiper?.destroy();
-    };
-  }, []); // O array vazio [] garante que este efeito rode apenas UMA VEZ.
-
-  // NOVO: Efeito que "ouve" por recados de rolagem
-  useEffect(() => {
-    // Verifica se recebemos um "post-it" (state) com um recado (scrollToId)
     if (location.state?.scrollToId) {
       const element = document.getElementById(location.state.scrollToId);
       if (element) {
-        // Se encontramos o elemento, rolamos a tela até ele
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [location]); // Este efeito roda toda vez que a localização (URL ou state) muda.
+  }, [location]);
 
   return (
     <main>
       <section id="inicio" className="w-full mt-4 md:mt-10">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="swiper-container-wrapper">
-            <div className="swiper-container h-[550px] md:h-[500px] rounded-2xl overflow-hidden md:w-[100%]">
-              <div className="swiper-wrapper">
-                <div className="swiper-slide bg-cover bg-center bg-slide-1">
-                  <div className="bg-black bg-opacity-50 w-full h-full">
-                    <div className="container mx-auto grid md:grid-cols-2 gap-8 items-center h-full p-10 md:p-20">
-                      <div className="text-center md:text-left text-white fade-in-up">
-                        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight">Transforme <span className="text-brand-green">Lixo</span> em <span className="text-brand-green">Recompensa</span>.</h1>
-                        <p className="mt-4 text-base md:text-lg text-gray-200">Junte-se à Recycle_me e descubra como suas ações sustentáveis geram descontos incríveis em parceiros locais.</p>
-                        <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-4">
-                          <Link to="/mapa" className="px-6 sm:px-8 py-3 text-sm sm:text-base whitespace-nowrap rounded-full bg-brand-green text-white font-bold shadow-lg hover:scale-105 transform transition-all duration-300 btn-glow-green">Encontrar Pontos de Coleta</Link>
-                          <Link to="/cadastro" className="btn-fill-green px-6 sm:px-8 py-3 text-sm sm:text-base whitespace-nowrap rounded-full bg-white text-brand-dark font-bold shadow-lg hover:scale-105 transform transition-transform"><span>Cadastre-se</span></Link>
-                        </div>
+          <div className="swiper-container-wrapper relative"> {/* Adicionamos 'relative' para os botões */}
+            
+            {/* MUDANÇA PRINCIPAL AQUI: Usamos os componentes Swiper */}
+            <Swiper
+              modules={[Navigation, Pagination, Autoplay]}
+              loop={true}
+              autoplay={{
+                delay: 7000,
+                disableOnInteraction: false,
+              }}
+              pagination={{
+                el: '.swiper-pagination-custom',
+                clickable: true,
+              }}
+              navigation={{
+                nextEl: '.swiper-button-next-custom',
+                prevEl: '.swiper-button-prev-custom',
+              }}
+              className="h-[550px] md:h-[500px] rounded-2xl"
+            >
+              <SwiperSlide className="bg-cover bg-center bg-slide-1">
+                <div className="bg-black bg-opacity-50 w-full h-full">
+                  <div className="container mx-auto grid md:grid-cols-2 gap-8 items-center h-full p-10 md:p-20">
+                    <div className="text-center md:text-left text-white fade-in-up">
+                      <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight">Transforme <span className="text-brand-green">Lixo</span> em <span className="text-brand-green">Recompensa</span>.</h1>
+                      <p className="mt-4 text-base md:text-lg text-gray-200">Junte-se à Recycle_me e descubra como suas ações sustentáveis geram descontos incríveis em parceiros locais.</p>
+                      <div className="mt-8 flex flex-col sm:flex-row justify-center md:justify-start gap-4">
+                        <Link to="/mapa" className="px-6 sm:px-8 py-3 text-sm sm:text-base whitespace-nowrap rounded-full bg-brand-green text-white font-bold shadow-lg hover:scale-105 transform transition-all duration-300 btn-glow-green">Encontrar Pontos de Coleta</Link>
+                        <Link to="/cadastro" className="btn-fill-green px-6 sm:px-8 py-3 text-sm sm:text-base whitespace-nowrap rounded-full bg-white text-brand-dark font-bold shadow-lg hover:scale-105 transform transition-transform"><span>Cadastre-se</span></Link>
                       </div>
-                      <div></div>
                     </div>
+                    <div></div>
                   </div>
                 </div>
-                <div className="swiper-slide bg-cover bg-center bg-slide-2">
-                  <div className="bg-black bg-opacity-60 text-white w-full h-full flex flex-col justify-center items-center text-center p-8">
-                    <div className="text-5xl md:text-6xl text-white mb-4"><i className="fas fa-graduation-cap"></i></div>
-                    <h3 className="text-3xl md:text-4xl font-bold">Eleve seu Conhecimento Sustentável.</h3>
-                    <p className="mt-2 text-gray-200 max-w-2xl">Aprenda com nossos especialistas a manusear materiais com segurança e otimizar sua reciclagem.</p>
-                    <div className="mt-8"><a href="#" className="px-6 sm:px-8 py-3 text-sm sm:text-base rounded-full bg-brand-green text-white font-bold shadow-lg hover:scale-105 transform transition-all duration-300 btn-glow-green whitespace-nowrap">Explorar Cursos Gratuitos</a></div>
-                  </div>
+              </SwiperSlide>
+              <SwiperSlide className="bg-cover bg-center bg-slide-2">
+                <div className="bg-black bg-opacity-60 text-white w-full h-full flex flex-col justify-center items-center text-center p-8">
+                  <div className="text-5xl md:text-6xl text-white mb-4"><i className="fas fa-graduation-cap"></i></div>
+                  <h3 className="text-3xl md:text-4xl font-bold">Eleve seu Conhecimento Sustentável.</h3>
+                  <p className="mt-2 text-gray-200 max-w-2xl">Aprenda com nossos especialistas a manusear materiais com segurança e otimizar sua reciclagem.</p>
+                  <div className="mt-8"><a href="#" className="px-6 sm:px-8 py-3 text-sm sm:text-base rounded-full bg-brand-green text-white font-bold shadow-lg hover:scale-105 transform transition-all duration-300 btn-glow-green whitespace-nowrap">Explorar Cursos Gratuitos</a></div>
                 </div>
-              </div>
-            </div>
+              </SwiperSlide>
+            </Swiper>
+            
+            {/* Os botões de navegação e paginação agora ficam FORA do componente Swiper */}
             <div className="swiper-button-prev-custom swiper-button-custom"><i className="fas fa-chevron-left"></i></div>
             <div className="swiper-button-next-custom swiper-button-custom"><i className="fas fa-chevron-right"></i></div>
             <div className="swiper-pagination-custom"></div>

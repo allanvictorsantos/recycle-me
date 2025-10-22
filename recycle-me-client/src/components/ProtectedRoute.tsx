@@ -1,25 +1,26 @@
-import { Navigate, useLocation } from 'react-router-dom';
+// src/components/ProtectedRoute.tsx
+
+// 1. Importamos o Outlet
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Este componente age como um "invólucro" ou "segurança"
-// A propriedade 'children' será a página que queremos proteger (ex: <MapPage />)
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // 1. Verificamos o nosso "quadro de avisos" para saber se o usuário está logado
+// 2. Não precisamos mais de 'children' como prop
+export function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // 2. A REGRA DE NEGÓCIO DO SEGURANÇA:
-  // Se o usuário NÃO estiver autenticado...
+  // 3. A lógica de verificação continua IDÊNTICA
   if (!isAuthenticated) {
-    // ...nós o redirecionamos para a página de login.
-    // O <Navigate> é um componente do react-router-dom que faz o redirecionamento.
-    // A mágica está no 'state': estamos deixando um "post-it" dizendo de onde o usuário veio.
+    // O state={{ from: location }} está perfeito!
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 3. Se o usuário ESTIVER autenticado, nós simplesmente deixamos ele passar
-  // e renderizamos a página que ele queria ver.
-  return <>{children}</>;
+  // 4. AQUI É A MUDANÇA:
+  // Em vez de renderizar {children}, renderizamos <Outlet />.
+  // O <Outlet /> é um "espaço reservado" que o React Router
+  // vai preencher com a rota filha (MapaPage, DashboardPage, etc.)
+  return <Outlet />;
 }
 
-export default ProtectedRoute;
+// (O export default não é mais necessário se você usa 'export function')
+// export default ProtectedRoute;

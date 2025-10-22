@@ -21,13 +21,15 @@ model User {
   collections Collection[]
 }
 model Market {
-  id Int @id @default(autoincrement())
-  name String
-  password String 
-  cnpj String @unique 
-  latitude Float
-  longitude Float
-  address String
+  id        Int      @id @default(autoincrement())
+  name      String
+  password  String
+  cnpj      String   @unique
+  latitude  Float?   // Opcional por enquanto
+  longitude Float?   // Opcional por enquanto
+  address   String?  // Opcional por enquanto
+  cep       String? // Obrigatório
+  numero    String?  // Obrigatório
   collections Collection[]
 }
 model Collection {

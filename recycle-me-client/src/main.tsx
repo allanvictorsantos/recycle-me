@@ -8,7 +8,7 @@ import HomePage from './pages/HomePage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
 import MapPage from './pages/MapPage.tsx';
-import ProtectedRoute from './components/ProtectedRoute.tsx'; // 1. Importamos nosso segurança
+import {ProtectedRoute} from './components/ProtectedRoute.tsx';
 
 import './index.css';
 
@@ -16,34 +16,45 @@ const router = createBrowserRouter(
   [
     {
       path: "/",
-      element: <App />,
+      element: <App />, // O Layout (Header/Footer)
       children: [
-        { path: "/", element: <HomePage /> },
-        { path: "/login", element: <LoginPage /> },
-        { path: "/cadastro", element: <RegisterPage /> },
+        // --- ROTAS PÚBLICAS ---
+        // (Renderizadas dentro do <Outlet> do App)
+        { index: true, element: <HomePage /> }, // 'index: true' é o mesmo que 'path: "/"'
+        { path: "login", element: <LoginPage /> },
+        { path: "cadastro", element: <RegisterPage /> },
+        
+        // --- MUDANÇA PRINCIPAL AQUI ---
+        // Em vez de "envelopar" a rota, criamos um "Grupo de Layout"
+        // que usa o ProtectedRoute.
         {
-          // 2. MUDANÇA PRINCIPAL AQUI:
-          // A rota "/mapa" agora é "envelopada" pelo nosso componente de segurança.
-          path: "/mapa",
-          element: (
-            <ProtectedRoute>
-              <MapPage />
-            </ProtectedRoute>
-          ),
+          element: <ProtectedRoute />, // 1. O "Segurança" é o layout...
+          children: [
+            // 2. ...e o <Outlet> dele vai renderizar estas rotas filhas:
+            { path: "mapa", element: <MapPage /> },
+            
+            // Se você tiver mais rotas protegidas, adicione-as aqui:
+            // { path: "dashboard", element: <DashboardPage /> },
+            // { path: "meu-perfil", element: <PerfilPage /> },
+          ]
         },
+        
+        // (Opcional: Adicionar Rota 404 aqui)
+        // { path: "*", element: <Pagina404 /> }
       ],
     },
   ],
   {
-    basename: "/recycle-me/",
+    // Sua configuração de basename está perfeita, mantenha!
+    basename: "/recycle-me/", 
   }
 );
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
+    {/* O AuthProvider abraçando tudo está PERFEITO! */}
     <AuthProvider>
       <RouterProvider router={router} />
     </AuthProvider>
   </React.StrictMode>,
 );
-
