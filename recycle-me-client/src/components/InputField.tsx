@@ -1,55 +1,64 @@
-// Salve este arquivo como: src/components/InputField.tsx
-
 import React from 'react';
 
-// 1. Definimos os tipos das props para ter um código mais seguro e com auto-complete
 interface InputFieldProps {
   id: string;
   label: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   placeholder: string;
-  type?: string; // O '?' torna a prop opcional
+  type?: string;
   required?: boolean;
   iconClass?: string;
-  // Prop especial para "filhos", como o botão de ver senha
   children?: React.ReactNode;
+  // --- NOVO: Aceita a propriedade disabled ---
+  disabled?: boolean; 
 }
 
-// 2. Criamos o componente com as props bem definidas e o exportamos
 export function InputField({
   id, label, value, onChange, placeholder,
   type = 'text', required = true, iconClass = 'fa-user',
-  children
+  children, onBlur, disabled // Recebe aqui
 }: InputFieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+      {/* O Label não tem mais fundo nenhum, fica transparente sempre */}
+      <label htmlFor={id} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
+      
       <div className="mt-1 relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <i className={`fas ${iconClass} text-gray-400`}></i>
+          <i className={`fas ${iconClass} ${disabled ? 'text-gray-400' : 'text-gray-400'}`}></i>
         </div>
+        
         <input
           type={type}
           id={id}
           name={id}
           required={required}
+          disabled={disabled} // Aplica a trava no HTML
           placeholder={placeholder}
-          // Adiciona um espaçamento à direita se houver um "filho" (o botão de olho)
+          onBlur={onBlur}
+          onChange={onChange}
+          value={value}
+          // --- AQUI ESTÁ A MÁGICA ---
+          // Se estiver disabled: Fundo cinza claro (dark: cinza escuro)
+          // Se estiver normal: Fundo branco (dark: cinza 800)
           className={`
-            block w-full pl-10 px-3 py-2 bg-white dark:bg-gray-800
-            border border-gray-300 dark:border-gray-600 rounded-md shadow-sm
+            block w-full pl-10 px-3 py-2 rounded-md shadow-sm
+            border border-gray-300 dark:border-gray-600
             placeholder-gray-400 focus:outline-none
-            focus:ring-brand-green focus:border-brand-green
+            text-brand-dark dark:text-white transition-colors
+            ${disabled 
+              ? 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-70' 
+              : 'bg-white dark:bg-gray-800 focus:ring-brand-green focus:border-brand-green'
+            }
             ${children ? 'pr-10' : ''}
           `}
-          value={value}
-          onChange={onChange}
         />
-        {/* Renderiza o botão de olho ou qualquer outro "filho" que for passado */}
         {children}
       </div>
     </div>
   );
 }
-

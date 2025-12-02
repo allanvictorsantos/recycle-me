@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
 
 generator client {
   provider = "prisma-client-js"
@@ -13,31 +9,98 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- USUÁRIOS (Recicladores) ---
 model User {
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique 
-  password String
+  id          Int          @id @default(autoincrement())
+  name        String
+  email       String       @unique
+  password    String
+  
+  // Gamificação e Pontos
+  points      Int          @default(0)
+  xp          Int          @default(0) 
+  level       Int          @default(1) 
+  
+  // --- ADICIONE ESSA LINHA AQUI: ---
+  isCertified Boolean      @default(false) 
+  
+  // Relações
   collections Collection[]
+  redemptions Redemption[]
+
+  createdAt   DateTime     @default(now())
 }
+
+// --- MERCADOS (Pontos de Coleta) ---
 model Market {
-  id        Int      @id @default(autoincrement())
-  name      String
-  password  String
-  cnpj      String   @unique
-  latitude  Float?   // Opcional por enquanto
-  longitude Float?   // Opcional por enquanto
-  address   String?  // Opcional por enquanto
-  cep       String? // Obrigatório
-  numero    String?  // Obrigatório
+  id          Int          @id @default(autoincrement())
+  name        String       // Razão Social (Travada via API)
+  tradeName   String?      // Nome Fantasia
+  password    String
+  cnpj        String       @unique
+  email       String       @unique // E-mail corporativo
+  
+  // TRAVA DE SEGURANÇA (O fiscal só loga se isso for true)
+  isVerified  Boolean      @default(false) 
+  
+  // Endereço
+  latitude    Float?
+  longitude   Float?
+  address     String?
+  cep         String?
+  numero      String?
+  
   collections Collection[]
+  
+  createdAt   DateTime     @default(now())
 }
+
+// --- TRANSAÇÕES (O Token de Entrega) ---
 model Collection {
-  id Int @id @default(autoincrement())
-  materialType String
-  weightInKg Float 
-  userId Int
-  user User @relation(fields:[userId], references:[id])
-  marketId Int
-  market Market @relation(fields:[marketId], references:[id])
+  id           Int              @id @default(autoincrement())
+  // O ID será usado como TOKEN #1234
+  
+  materialType String           // Ex: "Vidro", "Papel"
+  weightInKg   Float?           // Estimado pelo User, confirmado pelo Fiscal
+  
+  status       CollectionStatus @default(PENDING)
+  pointsEarned Int              @default(0)
+  
+  userId       Int
+  user         User             @relation(fields: [userId], references: [id])
+  
+  marketId     Int?             // Só preenche quando o mercado aceita
+  market       Market?          @relation(fields: [marketId], references: [id])
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+// --- LOJA DE RECOMPENSAS ---
+model Reward {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  cost        Int
+  imageUrl    String?
+  
+  redemptions Redemption[]
+}
+
+// --- HISTÓRICO DE RESGATES ---
+model Redemption {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  rewardId  Int
+  reward    Reward   @relation(fields: [rewardId], references: [id])
+  
+  code      String   
+  createdAt DateTime @default(now())
+}
+
+enum CollectionStatus {
+  PENDING
+  COMPLETED
+  REJECTED
 }

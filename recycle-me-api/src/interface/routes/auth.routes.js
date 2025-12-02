@@ -22,24 +22,35 @@ router.post('/login', async (req, res) => {
     let userOrMarket;
     let entityId;
     let entityType;
+    let isVerified = true; // Usuário PF nasce verificado por padrão
+    let name = '';
 
     if (type === 'pf') {
       // Lógica para login de Pessoa Física (Usuário)
       userOrMarket = await prisma.user.findUnique({ where: { email } });
+      
       if (!userOrMarket) {
         return res.status(401).json({ message: "Email não encontrado." });
       }
+      
       entityId = userOrMarket.id;
-      entityType = 'user';
+      entityType = 'user'; // Vamos padronizar para 'user' no token
+      name = userOrMarket.name;
 
     } else if (type === 'pj') {
       // Lógica para login de Pessoa Jurídica (Mercado)
       userOrMarket = await prisma.market.findUnique({ where: { cnpj } });
+      
        if (!userOrMarket) {
         return res.status(401).json({ message: "CNPJ não encontrado." });
       }
+      
       entityId = userOrMarket.id;
-      entityType = 'market';
+      entityType = 'market'; // Padronizar para 'market'
+      name = userOrMarket.name;
+      
+      // Importante: Pegar o status de verificação do banco
+      isVerified = userOrMarket.isVerified; 
 
     } else {
       return res.status(400).json({ message: "Tipo de conta inválido." });
@@ -55,16 +66,27 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { 
         id: entityId, 
-        type: entityType,
-        // Você pode adicionar mais dados aqui se quiser, como o nome
-        name: userOrMarket.name 
+        type: entityType, // 'user' ou 'market'
+        name: name,
+        isVerified: isVerified // Fundamental para a segurança do Front
       },
-      process.env.JWT_SECRET, // Garanta que seu .env tem a variável JWT_SECRET
-      { expiresIn: '7d' } // Token expira em 7 dias
+      process.env.JWT_SECRET, 
+      { expiresIn: '7d' }
     );
     
-    // Enviar o token como resposta
-    res.status(200).json({ token });
+    // Enviar o token E os dados do usuário como resposta
+    // (Isso ajuda o React a redirecionar sem precisar decodificar o token manualmente)
+    res.status(200).json({ 
+      token,
+      user: {
+        id: entityId,
+        name: name,
+        type: entityType,
+        isVerified: isVerified,
+        email: email || null,
+        cnpj: cnpj || null
+      }
+    });
 
   } catch (error) {
     console.error("Erro no login:", error);

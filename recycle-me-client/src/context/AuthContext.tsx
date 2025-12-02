@@ -10,9 +10,9 @@ const TOKEN_KEY = 'recycleme_auth_token';
 // Também vamos adicionar uma função para pegar o crachá guardado.
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (token: string) => void; 
+  login: (token: string) => void;
   logout: () => void;
-  getToken: () => string | null; 
+  getToken: () => string | null;
 }
 
 // O resto é igual...

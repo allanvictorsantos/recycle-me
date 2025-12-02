@@ -45,7 +45,7 @@ function HomePage() {
                 nextEl: '.swiper-button-next-custom',
                 prevEl: '.swiper-button-prev-custom',
               }}
-              className="h-[550px] md:h-[500px] rounded-2xl"
+              className="h-[650px] md:h-[500px] rounded-2xl"
             >
               <SwiperSlide className="bg-cover bg-center bg-slide-1">
                 <div className="bg-black bg-opacity-50 w-full h-full">

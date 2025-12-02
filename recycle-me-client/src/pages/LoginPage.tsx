@@ -1,9 +1,10 @@
 // Salve este arquivo como: src/pages/LoginPage.tsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // --- MUDANÇA: Importar useEffect ---
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { InputField } from '../components/InputField'; // Reutilizando nosso componente!
+import React from 'react'; // Import React
 
 type LoginType = 'pf' | 'pj';
 
@@ -18,20 +19,36 @@ function LoginPage() {
     // Estados para feedback do usuário
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // --- NOVO ESTADO: Controla se o login teve sucesso para disparar a navegação ---
+    const [loginSuccess, setLoginSuccess] = useState(false);
 
-    // Hooks para navegação e autenticação
+    // Hooks
     const navigate = useNavigate();
     const location = useLocation();
-    const { login } = useAuth();
+    // --- MUDANÇA: Pedir também 'isAuthenticated' ---
+    const { login, isAuthenticated } = useAuth();
 
-    // Lógica para redirecionar o usuário após o login
-    const from = location.state?.from?.pathname || "/mapa"; // Por padrão, vai para o mapa
+    // Lógica de redirecionamento (Padrão: "/")
+    const from = location.state?.from?.pathname || "/";
+
+    // --- NOVO useEffect: Observa a mudança de estado ---
+    // Este efeito corre sempre que 'loginSuccess' ou 'isAuthenticated' mudam
+    useEffect(() => {
+        // Se o login teve sucesso E o contexto já confirmou a autenticação...
+        if (loginSuccess && isAuthenticated) {
+            console.log("Auth state atualizado! Navegando para:", from);
+            // ...navegamos para o destino
+            navigate(from, { replace: true });
+        }
+    }, [loginSuccess, isAuthenticated, navigate, from]); // Dependências
+
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError(null);
+        setLoginSuccess(false); // Reseta
 
-        // Validação no frontend
+        // Validação no frontend (completa)
         if (loginType === 'pf' && !email.trim()) {
             return setError('O email é obrigatório.');
         }
@@ -44,7 +61,7 @@ function LoginPage() {
         
         setLoading(true);
 
-        // Prepara os dados para enviar à API
+        // Prepara os dados para enviar à API (completo)
         const bodyData = {
             type: loginType,
             password: password,
@@ -63,21 +80,23 @@ function LoginPage() {
                 throw new Error(data.message || 'Falha no login');
             }
 
-            // Se o login for bem-sucedido, salvamos o token no contexto
+            // Salva o token no contexto
             login(data.token);
 
-            // E navegamos para a página de destino
-            navigate(from, { replace: true });
+            console.log("Login API OK. Aguardando atualização de estado...");
+
+            // --- MUDANÇA: Apenas sinaliza sucesso (o useEffect cuida da navegação) ---
+            setLoginSuccess(true);
 
         } catch (err: any) {
             setError(err.message);
-        } finally {
-            setLoading(false);
+            setLoading(false); // Para o loading em caso de erro
         }
+        // --- MUDANÇA: 'finally' removido para permitir que 'loading' continue ---
     };
 
     return (
-        // Layout 100% preservado da página de registro
+        // Layout 100% preservado
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-6">
             <div className="max-w-6xl w-full grid md:grid-cols-2 rounded-2xl shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border-t border-l border-gray-100 dark:border-gray-700/50 border-b border-r border-gray-300 dark:border-black/20">
 
@@ -89,23 +108,21 @@ function LoginPage() {
                     />
                 </div>
 
-                <div className="p-8 md:p-12">
+                <div className="p-8 md:p-12 flex flex-col">
                     <div className="text-center mb-8">
-                        <Link to="/" className="inline-block text-2xl font-extrabold tracking-tighter text-brand-dark dark:text-white">
-                            ♻️ RECYCLE_ME
-                        </Link>
                         <h1 className="mt-4 text-3xl font-bold text-brand-dark dark:text-white">Acesse sua Conta</h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-2">Bem-vindo(a) de volta!</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} noValidate>
+                    <form onSubmit={handleSubmit} noValidate className="flex-grow min-h-[380px]">
                         {error && (
                             <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded-md relative mb-4" role="alert">
                                 <span className="block sm:inline">{error}</span>
                             </div>
                         )}
                         
-                        <fieldset disabled={loading} className="space-y-4">
+                        {/* --- MUDANÇA: Desabilita fieldset durante loading OU sucesso --- */}
+                        <fieldset disabled={loading || loginSuccess} className="space-y-4">
                             
                             {/* Seletor de Tipo de Conta */}
                             <div className="flex justify-around bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
@@ -117,32 +134,55 @@ function LoginPage() {
                                 </button>
                             </div>
                             
-                            {/* Campo de Identificação Condicional */}
+                            {/* Campo de Identificação Condicional (COMPLETO) */}
                             {loginType === 'pf' ? (
-                                <InputField id="email" label="Email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} iconClass="fa-envelope"/>
+                                <InputField 
+                                    id="email" 
+                                    label="Email" 
+                                    type="email" 
+                                    placeholder="seu@email.com" 
+                                    value={email} 
+                                    onChange={(e) => setEmail(e.target.value)} 
+                                    iconClass="fa-envelope"
+                                />
                             ) : (
-                                <InputField id="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} iconClass="fa-building"/>
+                                <InputField 
+                                    id="cnpj" 
+                                    label="CNPJ" 
+                                    placeholder="00.000.000/0000-00" 
+                                    value={cnpj} 
+                                    onChange={(e) => setCnpj(e.target.value)} 
+                                    iconClass="fa-building"
+                                />
                             )}
                             
-                            {/* Campo de Senha */}
-                            <InputField id="password" label="Senha" type={showPassword ? 'text' : 'password'} placeholder="Sua senha" value={password} onChange={(e) => setPassword(e.target.value)} iconClass="fa-lock">
+                            {/* Campo de Senha (COMPLETO) */}
+                            <InputField 
+                                id="password" 
+                                label="Senha" 
+                                type={showPassword ? 'text' : 'password'} 
+                                placeholder="Sua senha" 
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                iconClass="fa-lock"
+                            >
                                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-brand-green">
                                     <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                                 </button>
                             </InputField>
 
                             {/* Botão de Login */}
-                            <div>
-                                <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-base font-bold text-white bg-brand-green hover:scale-105 transform transition-all duration-300 btn-glow-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green disabled:opacity-50 disabled:cursor-not-allowed">
-                                    {loading ? 'Entrando...' : 'Entrar'}
+                            <div className="pt-2">
+                                <button type="submit" disabled={loading || loginSuccess} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-base font-bold text-white bg-brand-green hover:scale-105 transform transition-all duration-300 btn-glow-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {/* --- MUDANÇA: Feedback visual --- */}
+                                    {loading ? 'Entrando...' : (loginSuccess ? 'Redirecionando...' : 'Entrar')}
                                 </button>
                             </div>
                         </fieldset>
                     </form>
-                    
                     <div className="mt-8 text-center">
-                        <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                            Não tem uma conta?{' '}
+                         <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                             Não tem uma conta?{' '}
                             <Link to="/cadastro" className="font-medium text-brand-green hover:underline">Cadastre-se</Link>
                         </p>
                     </div>
@@ -153,3 +193,4 @@ function LoginPage() {
 }
 
 export default LoginPage;
+

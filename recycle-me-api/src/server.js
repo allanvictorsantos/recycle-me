@@ -1,11 +1,15 @@
 // FASE 1: Importações
+import dotenv from 'dotenv';
+dotenv.config();
 import express from "express";
 import cors from 'cors'; 
+
 import userRoutes from './interface/routes/user.routes.js';
 import authRoutes from './interface/routes/auth.routes.js';
 import marketRoutes from './interface/routes/market.routes.js';
-// NOVO: 1. Importamos o gerente do novo departamento de perfis
 import userProfileRoutes from './interface/routes/userProfile.routes.js'; 
+// NOVO: Importamos as rotas de Transação (O Core do TCC)
+import transactionRoutes from './interface/routes/transaction.routes.js';
 
 // FASE 2: Instanciação e Configurações Gerais
 const app = express();
@@ -17,8 +21,9 @@ app.use(cors());
 app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
 app.use('/markets', marketRoutes);
-// NOVO: 2. Plugamos o novo departamento com o prefixo /profile
 app.use('/profile', userProfileRoutes);
+// NOVO: Plugamos a rota de transações
+app.use('/transactions', transactionRoutes);
 
 // Rota de teste
 app.get("/", (req, res) => {
@@ -30,4 +35,3 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
-
