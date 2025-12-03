@@ -1,64 +1,86 @@
-// src/context/AuthContext.tsx
+import { createContext, useState, useContext, ReactNode } from 'react';
 
-import { createContext, useState, useContext, ReactNode, } from 'react';
-
-// O "NOME DA CHAVE" que usaremos para guardar o token no armário (localStorage)
+// Chaves para o LocalStorage
 const TOKEN_KEY = 'recycleme_auth_token';
+const USER_KEY = 'recycleme_user_data';
 
-// --- PASSO 1: Atualizar o "Contrato" ---
-// A função login agora precisa receber o crachá (token) para guardar.
-// Também vamos adicionar uma função para pegar o crachá guardado.
+// --- TIPO DE DADOS DO USUÁRIO ---
+// Define o que sabemos sobre quem logou
+export interface AuthUser {
+  id: number;
+  name: string;
+  email?: string;
+  type: 'user' | 'market'; // O pulo do gato: aqui diferenciamos
+  isVerified?: boolean;    // Importante para empresas
+}
+
+// --- CONTRATO DO CONTEXTO ---
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  user: AuthUser | null; // Agora temos os dados do usuário acessíveis em todo o app
+  login: (token: string, userData: AuthUser) => void; // Login exige Token + Dados
   logout: () => void;
   getToken: () => string | null;
 }
 
-// O resto é igual...
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
 
-  // --- PASSO 2: Inicializar o Estado Lendo do Armário ---
-  // Usamos uma função no useState para que ele rode SÓ UMA VEZ na inicialização.
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    return !!token; // Se token existir (não for null/undefined), retorna true.
+  // 1. Estado do Token
+  const [token, setToken] = useState<string | null>(() => {
+    return localStorage.getItem(TOKEN_KEY);
   });
 
-  // --- PASSO 3: Atualizar a Função de Login ---
-  // Ela agora recebe o token que o backend enviou e guarda no armário.
-  const login = (token: string) => {
-    localStorage.setItem(TOKEN_KEY, token); // 1. Guarda no armário
-    setIsAuthenticated(true);             // 2. Coloca o crachá temporário
+  // 2. Estado do Usuário (Lê do localStorage se existir)
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const storedUser = localStorage.getItem(USER_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  // A autenticação é verdadeira se tivermos token E usuário
+  const isAuthenticated = !!token && !!user;
+
+  // --- FUNÇÃO DE LOGIN INTELIGENTE ---
+  const login = (newToken: string, userData: AuthUser) => {
+    // 1. Salva na memória do navegador (persistência)
+    localStorage.setItem(TOKEN_KEY, newToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+
+    // 2. Atualiza o estado da aplicação (reatividade)
+    setToken(newToken);
+    setUser(userData);
   };
 
-  // --- PASSO 4: Atualizar a Função de Logout ---
-  // Ela agora limpa o armário.
+// --- FUNÇÃO DE LOGOUT TURBO ---
   const logout = () => {
-    localStorage.removeItem(TOKEN_KEY); // 1. Tira do armário
-    setIsAuthenticated(false);         // 2. Tira o crachá temporário
+    // 1. Limpa o armário
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    
+    // 2. Limpa o estado do React
+    setToken(null);
+    setUser(null);
+    
+    // 3. O Pulo do Gato: Força um recarregamento da página
+    // Isso garante que o menu seja redesenhado do zero
+    window.location.href = '/login'; 
   };
-
-  // --- PASSO 5: Criar a Função para Pegar o Crachá ---
-  // Isso será usado para *enviar* o crachá para o backend em rotas protegidas.
   const getToken = () => {
     return localStorage.getItem(TOKEN_KEY);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, getToken }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, getToken }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Seu Hook personalizado continua perfeito
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
 }

@@ -1,24 +1,9 @@
-import React from 'react'; // Removido useState e useEffect
-import { useAuth } from '../context/AuthContext'; // Para buscar o token e fazer logout
-import { Link } from 'react-router-dom'; // Para links futuros
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
-// --- INTERFACES (Definindo os Tipos para TypeScript) ---
-// (Estes são os tipos do código que você forneceu)
-
-interface UserData {
-  id?: number; // Adicionado ID, o backend geralmente envia
-  name: string;
-  email: string;
-  avatar?: string; // Avatar é opcional
-  level: number;
-  xp: number;
-  xpNeeded: number;
-  streak: number;
-  rank: string;
-  points: number;
-  recentActivity?: Activity[]; // Atividade recente pode não vir sempre
-}
-
+// --- TIPAGEM (Conforme o que o Backend manda agora) ---
 interface Activity {
   id: number;
   type: 'reciclagem' | 'quiz' | 'doacao';
@@ -26,11 +11,35 @@ interface Activity {
   date: string;
 }
 
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string;
+  level: number;
+  xp: number;
+  xpNeeded: number; // Vem calculado do back
+  points: number;
+  streak: number;   // Vem do back
+  rank: string;     // Vem calculado do back ("Ouro", "Prata")
+  recentActivity: Activity[];
+}
+
+// --- SUB-COMPONENTES VISUAIS ---
+
 interface StatCardProps {
   icon: string;
   value: string | number;
   label: string;
 }
+
+const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
+  <div className="flex flex-col items-center p-2 text-center bg-gray-700/50 rounded-lg w-full">
+    <span className="text-2xl mb-1">{icon}</span>
+    <span className="text-lg font-bold text-white">{value}</span>
+    <span className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</span>
+  </div>
+);
 
 interface GoalCardProps {
   title: string;
@@ -38,163 +47,190 @@ interface GoalCardProps {
   reward: string;
 }
 
-// --- COMPONENTES INTERNOS (Layout do código que você forneceu) ---
-// (StatCard, GoalCard - Mantidos exatamente iguais)
-
-const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
-  <div className="flex flex-col items-center p-2 text-center">
-    <span className="text-3xl mb-1">{icon}</span>
-    <span className="text-xl font-bold text-white">{value}</span>
-    <span className="text-xs text-gray-400 uppercase">{label}</span>
-  </div>
-);
-
 const GoalCard: React.FC<GoalCardProps> = ({ title, progress, reward }) => (
-  <div className="p-4 bg-gray-700 rounded-lg transition-all hover:bg-gray-600">
-    <h4 className="font-semibold text-lg mb-2 text-gray-100">{title}</h4>
-    <div className="w-full bg-gray-600 rounded-full h-2.5 dark:bg-gray-900">
+  <div className="p-4 bg-gray-700 rounded-lg transition-all hover:bg-gray-600 border border-gray-600 hover:border-brand-green/50">
+    <h4 className="font-semibold text-md mb-2 text-gray-100">{title}</h4>
+    <div className="w-full bg-gray-900 rounded-full h-2">
       <div
-        className="bg-yellow-400 h-2.5 rounded-full"
+        className="bg-yellow-400 h-2 rounded-full transition-all duration-1000"
         style={{ width: `${progress}%` }}
       ></div>
     </div>
-    <div className="flex justify-between text-sm mt-2 text-gray-400">
+    <div className="flex justify-between text-xs mt-2 text-gray-400">
       <span>{progress}% Completo</span>
-      <span className="text-yellow-400 font-bold">{reward}</span>
+      <span className="text-yellow-400 font-bold">+{reward}</span>
     </div>
   </div>
 );
 
-// Sidebar com Logout (Botão de Sair adicionado)
+// Sidebar da Esquerda (Perfil)
 const UserSidebar: React.FC<{ user: UserData; onLogout: () => void }> = ({ user, onLogout }) => (
-  <div className="w-full lg:w-1/3 p-6 bg-gray-800 rounded-lg shadow-xl text-white flex flex-col">
+  <div className="w-full lg:w-1/3 p-6 bg-gray-800 rounded-2xl shadow-xl text-white flex flex-col border border-gray-700">
+    
     <div className="flex flex-col items-center text-center">
-      {/* Avatar do Usuário */}
-      <div className="w-32 h-32 bg-brand-green rounded-full flex items-center justify-center text-5xl font-bold mb-4 border-4 border-gray-600 dark:border-gray-900 text-white shadow-md">
-        {/* Pega a primeira letra do nome se não houver avatar */}
-        {user.avatar || (user.name ? user.name.charAt(0).toUpperCase() : 'U')}
+      {/* Avatar com inicial */}
+      <div className="w-28 h-28 bg-gradient-to-br from-brand-green to-emerald-600 rounded-full flex items-center justify-center text-4xl font-bold mb-4 border-4 border-gray-700 text-white shadow-lg">
+        {user.name.charAt(0).toUpperCase()}
       </div>
-      <h2 className="text-3xl font-bold mb-1">{user.name}</h2>
-      <p className="text-sm text-brand-green font-medium">Nível {user.level} Reciclador</p>
+      <h2 className="text-2xl font-bold mb-1">{user.name}</h2>
+      <p className="text-xs text-brand-green font-bold uppercase tracking-widest border border-brand-green/30 px-2 py-1 rounded-full bg-brand-green/10">
+        Nível {user.level} • {user.rank}
+      </p>
     </div>
 
-    <div className="mt-8 space-y-4 flex-grow">
-      {/* Barra de Progresso do Nível */}
+    <div className="mt-8 space-y-6 flex-grow">
+      {/* Barra de Nível */}
       <div>
-        <div className="flex justify-between text-sm mb-1 font-medium text-gray-300">
-          <span>XP Total: {user.xp}</span>
-          <span>Próximo Nível: {user.xpNeeded} XP</span>
+        <div className="flex justify-between text-xs mb-2 font-bold text-gray-400 uppercase">
+          <span>XP Atual</span>
+          <span>{user.xp} / {user.xpNeeded} XP</span>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-2.5 dark:bg-gray-900">
+        <div className="w-full bg-gray-900 rounded-full h-3 shadow-inner">
           <div
-            className="bg-brand-green h-2.5 rounded-full"
-            style={{ width: `${(user.xp / user.xpNeeded) * 100}%` }}
-          ></div>
+            className="bg-brand-green h-3 rounded-full transition-all duration-1000 relative overflow-hidden"
+            style={{ width: `${Math.min(100, (user.xp / user.xpNeeded) * 100)}%` }}
+          >
+             {/* Efeito de brilho na barra */}
+             <div className="absolute top-0 left-0 bottom-0 right-0 bg-white/20 animate-pulse"></div>
+          </div>
         </div>
+        <p className="text-center text-xs text-gray-500 mt-2">Faltam {user.xpNeeded - user.xp} XP para o próximo nível</p>
       </div>
 
-      {/* Estatísticas de Gamificação */}
-      <div className="flex justify-around pt-4 border-t border-gray-700">
-        <StatCard icon="🔥" value={user.streak} label="Ofensiva" />
-        <StatCard icon="🏆" value={user.rank} label="Ranking" />
-        <StatCard icon="✨" value={user.points} label="Pontos" />
+      {/* Stats Grid */}
+      <div className="flex gap-2 justify-between">
+        <StatCard icon="🔥" value={user.streak} label="Dias Seg." />
+        <StatCard icon="💎" value={user.points} label="EcoPoints" />
+        <StatCard icon="🏆" value={user.rank} label="Liga" />
       </div>
     </div>
 
-    {/* Botão de Logout */}
     <button
       onClick={onLogout}
-      className="mt-8 w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+      className="mt-8 w-full py-3 rounded-xl border border-red-900/50 text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors font-bold text-sm"
     >
-      Sair da Conta
+      <i className="fas fa-sign-out-alt mr-2"></i> Sair da Conta
     </button>
   </div>
 );
 
 
-// --- Componente PRINCIPAL da Página de Usuário ---
+// --- COMPONENTE PRINCIPAL ---
 function UserProfilePage() {
-  // --- MUDANÇA: Removidos estados de loading, error, e userData (useState) ---
+  const { logout } = useAuth();
   
-  // Apenas pegamos o logout, pois esta página é protegida
-  const { logout } = useAuth(); 
+  // Estados reais
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // --- MUDANÇA: useEffect para buscar dados foi REMOVIDO ---
+  // --- BUSCAR DADOS REAIS ---
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('recycleme_auth_token');
+        const response = await axios.get('http://localhost:3000/profile/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUserData(response.data);
+      } catch (err) {
+        console.error("Erro ao carregar perfil:", err);
+        setError("Falha ao carregar seus dados.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // --- MUDANÇA: Dados mockados agora são usados diretamente ---
-  const userData: UserData = {
-    name: 'Usuário de Exemplo', // Nome de exemplo
-    email: 'user@example.com', // Email de exemplo
-    avatar: 'A',
-    level: 5,
-    xp: 550,
-    xpNeeded: 1000,
-    streak: 15,
-    rank: 'Ouro',
-    points: 1250,
-    recentActivity: [
-      { id: 1, type: 'reciclagem', description: 'Reciclagem de 5kg de Plástico', date: '22/10' },
-      { id: 2, type: 'quiz', description: 'Completou Quiz de Vidro', date: '21/10' },
-      { id: 3, type: 'doacao', description: 'Doou 50 pontos para a causa', date: '20/10' },
-    ],
-  };
+    fetchProfile();
+  }, []);
 
-  // --- MUDANÇA: Renderização Condicional (loading, error, !userData) REMOVIDA ---
-  // O componente agora renderiza diretamente os dados mockados
+  // --- LOADING STATE ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
+        <div className="text-center">
+          <i className="fas fa-circle-notch fa-spin text-4xl text-brand-green mb-4"></i>
+          <p>Carregando seu perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // --- Renderização Principal (Layout que você forneceu, com dados MOCKADOS) ---
+  // --- ERROR STATE ---
+  if (error || !userData) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
+         <div className="bg-gray-800 p-8 rounded-xl text-center max-w-md">
+            <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+            <h2 className="text-xl font-bold mb-2">Ops! Algo deu errado.</h2>
+            <p className="text-gray-400 mb-6">{error || "Não foi possível encontrar seus dados."}</p>
+            <Link to="/" className="bg-brand-green px-6 py-2 rounded-lg font-bold hover:opacity-90">Voltar para Home</Link>
+         </div>
+      </div>
+    );
+  }
+
+  // --- SUCESSO: RENDERIZAÇÃO REAL ---
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-8 lg:p-12">
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
         
-        {/* Lado Esquerdo: Perfil e Estatísticas (com dados mockados) */}
+        {/* Coluna Esquerda: Sidebar Fixa */}
         <UserSidebar user={userData} onLogout={logout} />
 
-        {/* Lado Direito: Atividades e Metas */}
+        {/* Coluna Direita: Conteúdo Scrollável */}
         <div className="w-full lg:w-3/4 space-y-8">
-          {/* Card de Metas/Desafios (Estilo Duolingo) */}
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
-            <h3 className="text-2xl font-bold text-brand-green mb-4">Desafios de Reciclagem</h3>
-            <p className="text-gray-300 mb-4">Complete desafios para ganhar mais XP e Pontos!</p>
-            
-            <div className="space-y-3">
-              <GoalCard 
-                title="Meta Semanal: 10kg de Papel" 
-                progress={70}
-                reward="50 XP" 
-              />
-              <GoalCard 
-                title="Desafio de Vidro (Nível 2)" 
-                progress={30} 
-                reward="100 Pontos" 
-              />
+          
+          {/* Banner de Saldo (Destaque) */}
+          <div className="bg-gradient-to-r from-brand-green to-teal-700 p-6 rounded-2xl shadow-lg flex justify-between items-center relative overflow-hidden">
+             <div className="relative z-10">
+                <p className="text-green-100 text-sm font-bold uppercase mb-1">Seu Saldo Disponível</p>
+                <h1 className="text-5xl font-black text-white tracking-tight">{userData.points} <span className="text-2xl font-medium opacity-80">pts</span></h1>
+                <button className="mt-4 bg-white text-brand-green px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition shadow-md">
+                   Usar em Descontos
+                </button>
+             </div>
+             <i className="fas fa-leaf text-9xl text-white opacity-10 absolute -right-4 -bottom-4 transform rotate-12"></i>
+          </div>
+
+          {/* Desafios */}
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-md border border-gray-700">
+            <div className="flex justify-between items-center mb-6">
+               <h3 className="text-xl font-bold text-white flex items-center gap-2"><i className="fas fa-bullseye text-yellow-500"></i> Missões da Semana</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <GoalCard title="Reciclar 5kg de Vidro" progress={userData.points > 0 ? 40 : 0} reward="50 XP" />
+              <GoalCard title="Visitar 2 Mercados" progress={50} reward="100 Pts" />
             </div>
           </div>
 
-          {/* Card de Atividades Recentes (com dados mockados) */}
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
-            <h3 className="text-2xl font-bold mb-4">Atividade Recente</h3>
+          {/* Histórico Real */}
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-md border border-gray-700">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2"><i className="fas fa-history text-blue-400"></i> Histórico de Impacto</h3>
+            
             <ul className="space-y-3">
               {userData.recentActivity && userData.recentActivity.length > 0 ? (
                 userData.recentActivity.map(activity => (
-                  <li key={activity.id} className="flex justify-between items-center p-3 bg-gray-700 rounded-md">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-xl">
-                        {activity.type === 'reciclagem' && '♻️'}
-                        {activity.type === 'quiz' && '🧠'}
-                        {activity.type === 'doacao' && '💚'}
-                      </span>
-                      <p className="text-gray-200">{activity.description}</p>
+                  <li key={activity.id} className="flex justify-between items-center p-4 bg-gray-700/50 rounded-xl border border-gray-700 hover:border-gray-600 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 rounded-full bg-green-900/50 flex items-center justify-center text-xl border border-green-700 text-green-400">
+                        <i className="fas fa-recycle"></i>
+                      </div>
+                      <div>
+                        <p className="text-gray-200 font-bold text-sm">{activity.description}</p>
+                        <p className="text-xs text-green-400 font-mono mt-1">+ Pontos Recebidos</p>
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-400">{activity.date}</span>
+                    <span className="text-xs text-gray-500 font-bold bg-gray-800 px-3 py-1 rounded-full">{activity.date}</span>
                   </li>
                 ))
               ) : (
-                <li className="text-center text-gray-400 p-3">Nenhuma atividade recente.</li>
+                <div className="text-center py-8">
+                    <i className="fas fa-box-open text-4xl text-gray-600 mb-3"></i>
+                    <p className="text-gray-500 text-sm">Você ainda não reciclou nada.</p>
+                    <Link to="/reciclar" className="text-brand-green hover:underline text-sm font-bold mt-2 block">Começar agora</Link>
+                </div>
               )}
-              <li className="text-center pt-3 text-brand-green cursor-pointer hover:underline">
-                Ver todo o histórico
-              </li>
             </ul>
           </div>
         </div>
@@ -204,4 +240,3 @@ function UserProfilePage() {
 };
 
 export default UserProfilePage;
-

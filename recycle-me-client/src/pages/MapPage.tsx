@@ -1,10 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-// Garante que os tipos do Google Maps estejam disponíveis
-/// <reference types="@types/google.maps" />
+import { useNavigate } from 'react-router-dom';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import React from 'react'; // Necessário para React.CSSProperties
+import React from 'react'; 
 
-// --- Interface para os dados do Mercado (Mantida) ---
+// --- Estilo Dark Moderno (Snazzy Maps) ---
+const darkMapStyle = [
+    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+    { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+    { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
+    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
+    { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
+    { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
+    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+    { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
+    { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
+    { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
+    { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
+    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
+    { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
+    { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
+];
+
 interface MarketData {
   id: number;
   name: string;
@@ -12,275 +30,220 @@ interface MarketData {
   latitude: number | null;
   longitude: number | null;
   cnpj: string;
-  cep?: string | null;
-  numero?: string | null;
 }
 
-// --- Configurações (Mantidas) ---
 const containerStyle: React.CSSProperties = {
   width: '100%',
-  height: '75vh',
-  position: 'relative' // Necessário para o botão
-};
-const defaultCenter = {
-  lat: -23.550520,
-  lng: -46.633308
-};
-const mapOptions: google.maps.MapOptions = {
-  zoomControl: true,         // Manter controle de zoom
-  streetViewControl: true,   // ATIVA o "bonequinho" (Pegman)
-  mapTypeControl: true,      // ATIVA o seletor Mapa/Satélite
-  fullscreenControl: true,
+  height: '80vh', // Altura boa para desktop
+  position: 'relative'
 };
 
-// Componente da Página do Mapa
+const defaultCenter = { lat: -23.550520, lng: -46.633308 };
+
+const mapOptions: google.maps.MapOptions = {
+  zoomControl: true,
+  streetViewControl: false, // Desativei para limpar a interface
+  mapTypeControl: false,    // Desativei para limpar a interface
+  fullscreenControl: true,
+  clickableIcons: false,    // Evita clicar em POIs do Google
+};
+
 function MapPage() {
+  const navigate = useNavigate();
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
   });
 
-  // Estados
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [markets, setMarkets] = useState<MarketData[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
   const [selectedMarket, setSelectedMarket] = useState<MarketData | null>(null);
-  // --- NOVO: Estados para geolocalização ---
-  const [currentPosition, setCurrentPosition] = useState<google.maps.LatLngLiteral | null>(null); // Posição atual, começa null
-  const [geolocationError, setGeolocationError] = useState<string | null>(null); // Erro na geoloc
-  const [isMyLocationWindowOpen, setIsMyLocationWindowOpen] = useState(false); // Visibilidade da InfoWindow do usuário
-  const [isLocating, setIsLocating] = useState(false); // Feedback enquanto busca localização
-  // --- NOVO: Estado para o ícone azul ---
+  
+  const [currentPosition, setCurrentPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const [geolocationError, setGeolocationError] = useState<string | null>(null);
+  const [isMyLocationWindowOpen, setIsMyLocationWindowOpen] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [myLocationIcon, setMyLocationIcon] = useState<google.maps.Symbol | null>(null);
 
+  // Detecta Tema (Dark/Light)
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Efeito para buscar mercados (Mantido)
+  useEffect(() => {
+      const checkTheme = () => {
+          setIsDarkMode(document.documentElement.classList.contains('dark'));
+      };
+      checkTheme();
+      const observer = new MutationObserver(checkTheme);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!isLoaded) return;
-    console.log("[Effect] isLoaded=true, buscando mercados...");
     const fetchMarkets = async () => {
-        setApiError(null);
         try {
             const response = await fetch('http://localhost:3000/markets');
-            if (!response.ok) {
-              let errorMsg = `Erro ${response.status}: Não foi possível buscar os pontos.`;
-              try { const errorData = await response.json(); errorMsg = errorData.message || errorMsg; } catch (e) {}
-              throw new Error(errorMsg);
-            }
+            if (!response.ok) throw new Error('Erro ao buscar pontos.');
             const data: MarketData[] = await response.json();
             const validMarkets = data.filter(m => m.latitude != null && m.longitude != null);
             setMarkets(validMarkets);
-            console.log("Mercados carregados:", validMarkets);
         } catch (error: any) {
-            console.error("Erro ao buscar mercados:", error);
-            setApiError(error.message || 'Ocorreu um erro ao buscar os pontos.');
+            setApiError(error.message);
         }
     };
     fetchMarkets();
-  }, [isLoaded]); // Dependência: isLoaded
+  }, [isLoaded]);
 
-   // --- NOVO: Efeito para inicializar Ícone AZUL ---
    useEffect(() => {
-    console.log("[Effect] para ícone MyLocation. isLoaded?", isLoaded);
-    if (isLoaded) {
-        if (typeof window !== 'undefined' && window.google && window.google.maps && window.google.maps.SymbolPath) {
-            console.log("Definindo ícone MyLocation...");
-            const blueIcon: google.maps.Symbol = { // Cria objeto com tipo explícito
-                path: window.google.maps.SymbolPath.CIRCLE, fillColor: '#4285F4', fillOpacity: 1, strokeColor: '#FFFFFF', strokeWeight: 1.5, scale: 7,
-            };
-            setMyLocationIcon(blueIcon);   // Setter usado
-            console.log("Ícone MyLocation definido no estado.");
-        } else {
-            console.error("ERRO CRÍTICO: window.google.maps ou SymbolPath não disponível!");
-            setApiError("Erro ao carregar recursos essenciais do mapa.");
-        }
+    if (isLoaded && window.google) {
+        setMyLocationIcon({
+            path: window.google.maps.SymbolPath.CIRCLE, 
+            fillColor: '#10B981', // Verde da Marca
+            fillOpacity: 1, 
+            strokeColor: '#FFFFFF', 
+            strokeWeight: 2, 
+            scale: 8, // Ícone um pouco maior
+        });
     }
-  }, [isLoaded]); // Dependência correta
+  }, [isLoaded]);
 
+  const onLoad = useCallback((mapInstance: google.maps.Map) => setMap(mapInstance), []);
+  const onUnmount = useCallback(() => setMap(null), []);
 
-  // Funções de Callback (Mantidas) - onLoad agora é simples
-  const onLoad = useCallback((mapInstance: google.maps.Map) => {
-    console.log("--- Mapa Carregado (onLoad chamado)! ---");
-    setMap(mapInstance);
-    // Não busca geoloc aqui, espera o botão
-  }, []);
-
-  const onUnmount = useCallback(() => {
-    console.log("--- Mapa Desmontado (onUnmount chamado) ---");
-    setMap(null);
-  }, []);
-
-   // --- NOVO: Função para buscar e centralizar na localização atual (Botão) ---
    const findMyLocation = () => {
-    // Verifica se temos o mapa e se o navegador suporta geolocalização
-    if (!map || !navigator.geolocation) {
-        setGeolocationError("Geolocalização não é suportada ou o mapa não carregou.");
-        console.error("findMyLocation falhou: Mapa não pronto ou geolocalização não suportada.");
-        return;
-    }
-
-    console.log("Botão 'Onde estou?' clicado. Tentando obter geolocalização...");
-    setIsLocating(true); // Ativa feedback visual no botão
-    setGeolocationError(null); // Limpa erros anteriores
-    // Fecha janelas abertas para evitar sobreposição
+    if (!map || !navigator.geolocation) return;
+    setIsLocating(true);
+    setGeolocationError(null);
     setSelectedMarket(null);
     setIsMyLocationWindowOpen(false);
 
-    // Chama a API de geolocalização do navegador
     navigator.geolocation.getCurrentPosition(
-      (position) => { // Callback de sucesso
+      (position) => {
           const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-          console.log("Localização encontrada (botão):", pos);
-          setCurrentPosition(pos); // Guarda a posição encontrada no estado
-          map.panTo(pos);          // Move o centro do mapa para a nova posição
-          map.setZoom(15);         // Aplica um zoom mais próximo
-          setIsLocating(false);    // Desativa feedback visual de carregamento
-          // Opcional: abrir InfoWindow automaticamente após encontrar?
-          // setIsMyLocationWindowOpen(true);
+          setCurrentPosition(pos);
+          map.panTo(pos);
+          map.setZoom(15);
+          setIsLocating(false);
       },
-      (error) => { // Callback de erro
-          // Mantém a posição atual (se houver) ou defaultCenter
-          let errorMsg = `Erro ${error.code}: ${error.message}`;
-          console.error("Erro ao obter geolocalização (botão):", errorMsg, error);
-          setGeolocationError(errorMsg); // Mostra o erro para o usuário
-          setIsLocating(false);    // Desativa feedback visual de carregamento
-          // Opcional: Voltar para a visão padrão se der erro?
-          // setCurrentPosition(null); // Forçaria a usar defaultCenter na próxima renderização
-          // map.panTo(defaultCenter);
-          // map.setZoom(12);
+      (error) => {
+          setGeolocationError("Não foi possível obter sua localização.");
+          setIsLocating(false);
       },
-      // Opções para a busca de geolocalização
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true }
     );
   };
 
-  // Handlers para InfoWindow (reintroduzidos e completos)
   const handleMarkerClick = (market: MarketData) => {
-    console.log("Marcador de mercado clicado:", market.name);
     setSelectedMarket(market);
-    setIsMyLocationWindowOpen(false); // Fecha a outra janela
-  };
-  const handleMyLocationMarkerClick = () => {
-    console.log("Marcador 'Minha Localização' clicado.");
-    setIsMyLocationWindowOpen(true);
-    setSelectedMarket(null); // Fecha a outra janela
-  };
-  const handleCloseAllInfoWindows = () => { // Renomeado para clareza
-    console.log("Fechando InfoWindows.");
-    setSelectedMarket(null);
     setIsMyLocationWindowOpen(false);
   };
 
-
-  // Renderização Condicional
-  if (loadError) return <main className="container mx-auto p-8 text-center text-red-500"><h1>Erro ao carregar API Google Maps</h1><p>{loadError.message}</p></main>;
-  // Espera apenas API carregar (mapa começa em SP)
-  if (!isLoaded) return <main className="container mx-auto p-8 text-center"><h1 className="text-xl font-semibold dark:text-white">Carregando API do Mapa...</h1></main>;
-   // Mostra erro da busca de mercados APÓS API do Google carregar
-  if (apiError) return <main className="container mx-auto p-8 text-center text-red-500"><h1>Erro ao buscar dados</h1><p>{apiError}</p></main>;
-
-  // Se chegou aqui, isLoaded = true
-  console.log("API Carregada. Renderizando GoogleMap...");
-  // Define o centro baseado na posição atual OU no default
-  const mapCenter = currentPosition || defaultCenter;
+  if (loadError) return <div className="text-red-500 p-8 text-center font-bold">Erro ao carregar mapa. Verifique sua chave API.</div>;
+  if (!isLoaded) return <div className="text-center p-8 dark:text-white flex items-center justify-center h-96 gap-3"><i className="fas fa-spinner fa-spin text-3xl text-brand-green"></i> <span className="text-xl">Carregando mapa...</span></div>;
 
   return (
-    <main className="container mx-auto my-8 px-4 md:px-0">
-      <h1 className="text-3xl font-bold text-center mb-6 dark:text-white">Pontos de Coleta</h1>
-      {/* --- NOVO: Exibe erro de geoloc se houver --- */}
+    <main className="container mx-auto my-6 px-4 md:px-0 relative">
+      
       {geolocationError && (
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-              <p className="font-bold">Aviso de Localização</p>
-              <p>{geolocationError}</p>
-          </div>
+        <div className="absolute top-0 left-0 right-0 z-50 flex justify-center p-4">
+             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-full shadow-lg animate-bounce flex items-center gap-2">
+                <i className="fas fa-exclamation-circle"></i>
+                {geolocationError}
+             </div>
+        </div>
       )}
-      {/* Container relativo para o botão */}
-      <div className="rounded-lg overflow-hidden shadow-lg border dark:border-gray-700 relative">
+      
+      {/* MOLDURA PREMIUM DO MAPA */}
+      <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white dark:border-gray-800 relative group">
+        
         <GoogleMap
           mapContainerStyle={containerStyle}
-          center={mapCenter} // Usa a posição atual OU default
-          // Ajusta zoom inicial baseado se já temos posição ou não
-          zoom={currentPosition ? (currentPosition === defaultCenter ? 12 : 15) : 12}
-          options={mapOptions}
+          center={currentPosition || defaultCenter}
+          zoom={currentPosition ? 15 : 12}
+          options={{
+              ...mapOptions,
+              styles: isDarkMode ? darkMapStyle : [], 
+          }}
           onLoad={onLoad}
           onUnmount={onUnmount}
-          onClick={handleCloseAllInfoWindows}
+          onClick={() => setSelectedMarket(null)}
         >
-          {/* --- NOVO: Marcador da Posição Atual (Azul) --- */}
-          {/* Só mostra se a posição foi encontrada E não é a padrão de SP E o ícone azul está pronto */}
-          {currentPosition && currentPosition !== defaultCenter && myLocationIcon && (
-              <Marker
-                  position={currentPosition}
-                  title="Sua Localização"
-                  icon={myLocationIcon} // Usa o ícone azul do estado
-                  onClick={handleMyLocationMarkerClick} // Abre a janela "Você está aqui"
+          {currentPosition && myLocationIcon && (
+              <Marker 
+                position={currentPosition} 
+                title="Você" 
+                icon={myLocationIcon} 
+                onClick={() => setIsMyLocationWindowOpen(true)} 
+                zIndex={999} 
               />
           )}
 
-          {/* Marcadores dos Mercados (Padrão Vermelho) */}
           {markets.map(market => (
-             market.latitude && market.longitude && (
+              market.latitude && market.longitude && (
               <Marker
                 key={market.id}
                 position={{ lat: market.latitude, lng: market.longitude }}
-                title={market.name}
-                // Sem 'icon' usa o marcador vermelho padrão
                 onClick={() => handleMarkerClick(market)}
               />
             )
           ))}
 
-          {/* InfoWindow dos Mercados */}
+          {/* --- CARD DE INFORMAÇÃO MODERNO (POPUP) --- */}
           {selectedMarket && selectedMarket.latitude && selectedMarket.longitude && (
             <InfoWindow
               position={{ lat: selectedMarket.latitude, lng: selectedMarket.longitude }}
-              onCloseClick={handleCloseAllInfoWindows}
+              onCloseClick={() => setSelectedMarket(null)}
+              options={{
+                  pixelOffset: new window.google.maps.Size(0, -30), // Sobe um pouco para não cobrir o pino
+                  disableAutoPan: false
+              }}
             >
-              <div className="p-2 max-w-xs text-gray-800">
-                 <h3 className="font-bold text-md mb-1">{selectedMarket.name}</h3>
-                 <p className="text-sm">{selectedMarket.address || "Endereço não disponível"}</p>
+              <div className="p-1 min-w-[240px]">
+                 <div className="flex items-center gap-2 mb-2 border-b border-gray-100 pb-2">
+                    <div className="w-8 h-8 bg-brand-green/10 rounded-full flex items-center justify-center text-brand-green">
+                        <i className="fas fa-store"></i>
+                    </div>
+                    <h3 className="font-bold text-gray-800 text-sm leading-tight">{selectedMarket.name}</h3>
+                 </div>
+                 
+                 <p className="text-xs text-gray-500 mb-3 flex items-start gap-1">
+                    <i className="fas fa-map-marker-alt mt-0.5 text-gray-400"></i>
+                    {selectedMarket.address}
+                 </p>
+                 
+                 {/* Botão Traçar Rota Moderno */}
+                 <a 
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedMarket.latitude},${selectedMarket.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full bg-brand-dark text-white text-xs font-bold py-2.5 rounded-lg hover:bg-black transition-all shadow-md text-center no-underline flex items-center justify-center gap-2"
+                 >
+                    <i className="fas fa-directions"></i> TRAÇAR ROTA
+                 </a>
               </div>
             </InfoWindow>
           )}
-
-           {/* --- NOVO: InfoWindow da Localização Atual --- */}
-           {isMyLocationWindowOpen && currentPosition && (
-            <InfoWindow
-              position={currentPosition}
-              onCloseClick={handleCloseAllInfoWindows}
-            >
-              <div className="p-2 text-gray-800">
-                <p className="font-semibold">Você está aqui!</p>
-                {/* Mostra coordenadas para debug */}
-                <p className='text-xs'>({currentPosition.lat.toFixed(4)}, {currentPosition.lng.toFixed(4)})</p>
-              </div>
-            </InfoWindow>
-          )}
-
         </GoogleMap>
 
-         {/* --- NOVO: Botão Flutuante "Onde Estou?" --- */}
+         {/* --- BOTÃO FLUTUANTE ESQUERDA (Onde Estou) --- */}
          <button
-            onClick={findMyLocation} // Chama a função para buscar localização
-            disabled={isLocating || !map || !isLoaded} // Desabilita enquanto busca ou se mapa/API não carregou
-            title="Centralizar na minha localização"
-            // Posicionamento e Estilo (Ajustados)
-            className={`
-              absolute bottom-5 left-5 z-10          // Canto Inferior Esquerdo
-              bg-white dark:bg-gray-700 rounded-lg shadow-md // Bordas mais suaves
-              p-4 text-xl                         // Padding e Tamanho do Ícone Aumentados
-              text-gray-700 dark:text-gray-200
-              hover:bg-gray-100 dark:hover:bg-gray-600
-              disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-200          // Transição suave
-            `}
+            onClick={findMyLocation}
+            disabled={isLocating}
+            className="absolute bottom-8 left-6 bg-white dark:bg-gray-800 text-gray-700 dark:text-white p-4 rounded-2xl shadow-xl hover:bg-gray-50 dark:hover:bg-gray-700 hover:scale-110 transition-all z-10 border border-gray-100 dark:border-gray-700 group"
+            title="Minha Localização"
         >
-            {isLocating ? ( // Mostra ícone de loading enquanto busca
-                <svg className="animate-spin h-5 w-5 text-brand-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            ) : ( // Mostra ícone de alvo
-                // Garanta que Font Awesome está carregado no seu index.html
-                <i className="fas fa-crosshairs"></i>
-            )}
+            {isLocating ? <i className="fas fa-spinner fa-spin text-brand-green"></i> : <i className="fas fa-crosshairs text-xl group-hover:text-brand-green transition-colors"></i>}
+        </button>
+
+        {/* --- BOTÃO FLUTUANTE DIREITA (Quero Reciclar - ESTILO HOME) --- */}
+        <button
+            onClick={() => navigate('/reciclar')}
+            className="absolute bottom-8 right-6 md:right-8 bg-gradient-to-r from-brand-green to-emerald-600 text-white px-6 md:px-8 py-4 rounded-full shadow-2xl hover:scale-105 hover:shadow-green-500/40 transition-all z-10 flex items-center gap-3 font-black text-base md:text-lg tracking-wide btn-glow-green border-2 border-white/20"
+        >
+            <i className="fas fa-recycle text-2xl animate-spin-slow"></i> 
+            <span className="hidden md:inline">QUERO RECICLAR</span>
+            <span className="md:hidden">RECICLAR</span>
         </button>
 
       </div>
@@ -289,4 +252,3 @@ function MapPage() {
 }
 
 export default MapPage;
-

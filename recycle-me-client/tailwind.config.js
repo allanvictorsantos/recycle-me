@@ -2,7 +2,7 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // <-- Esta linha diz para ele ler todos os seus arquivos de código
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {},

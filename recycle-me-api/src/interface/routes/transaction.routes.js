@@ -6,8 +6,42 @@ import { isAuthenticated } from '../../middlewares/isAuthenticated.js';
 const prisma = new PrismaClient();
 const router = Router();
 
-// Aplicamos a proteção em TODAS as rotas deste arquivo de uma vez
+// Aplicamos a proteção em TODAS as rotas deste arquivo
 router.use(isAuthenticated);
+
+// ==================================================
+// 0. ROTA DE STATS (Para o Dashboard do Fiscal)
+// ==================================================
+router.get('/market/stats', async (req, res) => {
+  try {
+    if (req.user.type !== 'market') return res.status(403).json({ message: "Acesso negado." });
+
+    // Busca todas as coletas JÁ FEITAS por este mercado
+    const myCollections = await prisma.collection.findMany({
+        where: { 
+            marketId: req.user.id,
+            status: 'COMPLETED'
+        }
+    });
+
+    // Calcula totais
+    const totalWeight = myCollections.reduce((acc, curr) => acc + (curr.weightInKg || 0), 0);
+    const totalPoints = myCollections.reduce((acc, curr) => acc + (curr.pointsEarned || 0), 0);
+    
+    // Coletas de hoje
+    const today = new Date().toDateString();
+    const dailyCount = myCollections.filter(c => new Date(c.updatedAt).toDateString() === today).length;
+
+    res.json({
+        dailyCount,
+        totalWeight,
+        totalPoints
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar estatísticas." });
+  }
+});
 
 // ==================================================
 // 1. ROTA DO USUÁRIO: CRIAR PEDIDO (GERAR TOKEN)
@@ -16,7 +50,6 @@ router.post('/create', async (req, res) => {
   try {
     const { materialType, weightInKg } = req.body;
     
-    // Verificação baseada no Token atualizado
     if (req.user.type !== 'user') {
       return res.status(403).json({ message: "Apenas usuários comuns podem criar pedidos de reciclagem." });
     }
@@ -26,7 +59,7 @@ router.post('/create', async (req, res) => {
         materialType,
         weightInKg: parseFloat(weightInKg),
         status: 'PENDING',
-        userId: req.user.id, // ID vem do middleware
+        userId: req.user.id,
       }
     });
 
@@ -49,12 +82,10 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Verifica permissão de Mercado
     if (req.user.type !== 'market') {
       return res.status(403).json({ message: "Acesso restrito a Pontos de Coleta." });
     }
     
-    // Trava de Segurança (Conta em Análise)
     if (req.user.isVerified === false) {
        return res.status(403).json({ message: "Sua conta ainda está em análise. Você não pode validar coletas." });
     }
@@ -65,6 +96,11 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!transaction) return res.status(404).json({ message: "Código inválido." });
+
+    // Aviso se já foi usado
+    if (transaction.status === 'COMPLETED') {
+        return res.status(400).json({ message: "Este pedido já foi validado anteriormente." });
+    }
 
     res.json(transaction);
 
@@ -84,10 +120,15 @@ router.patch('/:id/confirm', async (req, res) => {
     if (req.user.type !== 'market') return res.status(403).json({ message: "Acesso negado." });
     if (!req.user.isVerified) return res.status(403).json({ message: "Conta não verificada." });
 
+    // --- BLINDAGEM DE SEGURANÇA ---
+    const checkTransaction = await prisma.collection.findUnique({ where: { id: parseInt(id) } });
+    if (!checkTransaction) return res.status(404).json({ message: "Pedido não encontrado." });
+    if (checkTransaction.status === 'COMPLETED') return res.status(400).json({ message: "ERRO: Token já utilizado!" });
+    // -----------------------------
+
     const POINTS_PER_KG = 100;
     const pointsToGive = Math.floor(finalWeight * POINTS_PER_KG);
 
-    // Transação atômica no banco (Segurança total)
     const result = await prisma.$transaction(async (prisma) => {
       const updatedCollection = await prisma.collection.update({
         where: { id: parseInt(id) },
