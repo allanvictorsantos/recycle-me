@@ -8,8 +8,10 @@ import userRoutes from './interface/routes/user.routes.js';
 import authRoutes from './interface/routes/auth.routes.js';
 import marketRoutes from './interface/routes/market.routes.js';
 import userProfileRoutes from './interface/routes/userProfile.routes.js'; 
-// NOVO: Importamos as rotas de Transação (O Core do TCC)
 import transactionRoutes from './interface/routes/transaction.routes.js';
+
+// --- NOVO: Importamos as rotas do Marketplace ---
+import marketplaceRoutes from './interface/routes/marketplace.routes.js';
 
 // FASE 2: Instanciação e Configurações Gerais
 const app = express();
@@ -22,8 +24,11 @@ app.use('/users', userRoutes);
 app.use('/auth', authRoutes);
 app.use('/markets', marketRoutes);
 app.use('/profile', userProfileRoutes);
-// NOVO: Plugamos a rota de transações
 app.use('/transactions', transactionRoutes);
+
+// --- NOVO: Plugamos a rota de ofertas e resgates ---
+// Tudo que for /market/offers ou /market/redeem vai cair aqui
+app.use('/market', marketplaceRoutes);
 
 // Rota de teste
 app.get("/", (req, res) => {

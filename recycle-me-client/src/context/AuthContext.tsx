@@ -4,21 +4,23 @@ import { createContext, useState, useContext, ReactNode } from 'react';
 const TOKEN_KEY = 'recycleme_auth_token';
 const USER_KEY = 'recycleme_user_data';
 
-// --- TIPO DE DADOS DO USUÁRIO ---
-// Define o que sabemos sobre quem logou
+// --- TIPO DE DADOS DO USUÁRIO (CORRIGIDO) ---
+// Agora o TypeScript sabe que 'points' e 'xp' existem!
 export interface AuthUser {
   id: number;
   name: string;
   email?: string;
-  type: 'user' | 'market'; // O pulo do gato: aqui diferenciamos
-  isVerified?: boolean;    // Importante para empresas
+  type: 'user' | 'market'; 
+  isVerified?: boolean;    
+  points?: number; // <--- ADICIONADO: Saldo de EcoPoints
+  xp?: number;     // <--- ADICIONADO: Experiência
 }
 
 // --- CONTRATO DO CONTEXTO ---
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: AuthUser | null; // Agora temos os dados do usuário acessíveis em todo o app
-  login: (token: string, userData: AuthUser) => void; // Login exige Token + Dados
+  user: AuthUser | null; 
+  login: (token: string, userData: AuthUser) => void; 
   logout: () => void;
   getToken: () => string | null;
 }
@@ -32,40 +34,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem(TOKEN_KEY);
   });
 
-  // 2. Estado do Usuário (Lê do localStorage se existir)
+  // 2. Estado do Usuário
   const [user, setUser] = useState<AuthUser | null>(() => {
     const storedUser = localStorage.getItem(USER_KEY);
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // A autenticação é verdadeira se tivermos token E usuário
   const isAuthenticated = !!token && !!user;
 
-  // --- FUNÇÃO DE LOGIN INTELIGENTE ---
+  // --- FUNÇÃO DE LOGIN ---
   const login = (newToken: string, userData: AuthUser) => {
-    // 1. Salva na memória do navegador (persistência)
     localStorage.setItem(TOKEN_KEY, newToken);
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
 
-    // 2. Atualiza o estado da aplicação (reatividade)
     setToken(newToken);
     setUser(userData);
   };
 
-// --- FUNÇÃO DE LOGOUT TURBO ---
+  // --- FUNÇÃO DE LOGOUT TURBO ---
   const logout = () => {
-    // 1. Limpa o armário
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     
-    // 2. Limpa o estado do React
     setToken(null);
     setUser(null);
     
-    // 3. O Pulo do Gato: Força um recarregamento da página
-    // Isso garante que o menu seja redesenhado do zero
     window.location.href = '/login'; 
   };
+
   const getToken = () => {
     return localStorage.getItem(TOKEN_KEY);
   };

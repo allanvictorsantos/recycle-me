@@ -2,21 +2,21 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
-// Nossas importações de Contexto e Layout
+// Contexto e Layout
 import { AuthProvider } from './context/AuthContext';
 import App from './App'; 
 import { ProtectedRoute } from './components/ProtectedRoute'; 
 
-// Páginas Existentes
+// Páginas
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage';
 import UserProfilePage from './pages/UserProfilePage';
-
-// --- NOVAS PÁGINAS (O Coração do TCC) ---
-import MarketDashboard from './pages/MarketDashboard';   // Painel do Fiscal
-import RecycleRequestPage from './pages/RecycleRequestPage'; // Tela "Quero Reciclar"
+import MarketDashboard from './pages/MarketDashboard';
+import RecycleRequestPage from './pages/RecycleRequestPage';
+import CompanyOffersPage from './pages/CompanyOffersPage';
+import MarketplacePage from './pages/MarketplacePage';
 
 import './index.css';
 
@@ -28,27 +28,34 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           {/* Rota "Mãe" com o Layout Principal (App.tsx) */}
           <Route path="/" element={<App />}>
 
-            {/* === ROTAS PÚBLICAS === */}
+            {/* ===================================================== */}
+            {/* 🟢 ÁREA PÚBLICA (QUALQUER UM ACESSA)                 */}
+            {/* ===================================================== */}
+            
+            {/* Home Page (Início) - TEM QUE FICAR AQUI! */}
             <Route index element={<HomePage />} />
+            
             <Route path="login" element={<LoginPage />} />
             <Route path="cadastro" element={<RegisterPage />} />
             <Route path="mapa" element={<MapPage />} />
+            <Route path="clube" element={<MarketplacePage />} />
 
-            {/* === ROTAS PROTEGIDAS (Só acessa se estiver logado) === */}
+            {/* ===================================================== */}
+            {/* 🔒 ÁREA PROTEGIDA (SÓ COM LOGIN)                       */}
+            {/* ===================================================== */}
             <Route element={<ProtectedRoute />}>
               
-              {/* Perfil do Usuário */}
+              {/* Rotas do Usuário */}
               <Route path="perfil" element={<UserProfilePage />} />
-              
-              {/* Rota do Usuário: Gerar Token de Reciclagem */}
               <Route path="reciclar" element={<RecycleRequestPage />} />
 
-              {/* Rota da Empresa: Painel do Fiscal */}
+              {/* Rotas da Empresa */}
               <Route path="painel-fiscal" element={<MarketDashboard />} />
+              <Route path="minhas-ofertas" element={<CompanyOffersPage />} />
 
             </Route>
 
-            {/* Rota 404 (Página não encontrada) */}
+            {/* Rota 404 */}
             <Route path="*" element={
               <main className="container mx-auto p-8 text-center">
                 <h1 className="text-4xl font-bold dark:text-white">Erro 404</h1>

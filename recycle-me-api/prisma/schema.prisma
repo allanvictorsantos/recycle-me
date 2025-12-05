@@ -9,38 +9,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- USUÁRIOS (Recicladores) ---
+// --- USUÁRIOS ---
 model User {
   id          Int          @id @default(autoincrement())
   name        String
   email       String       @unique
   password    String
   
-  // Gamificação e Pontos
-  points      Int          @default(0)
-  xp          Int          @default(0) 
+  // Gamificação
+  points      Int          @default(0) // Saldo atual
+  xp          Int          @default(0) // Histórico total (Nível)
   level       Int          @default(1) 
-  
-  // --- ADICIONE ESSA LINHA AQUI: ---
-  isCertified Boolean      @default(false) 
+  isCertified Boolean      @default(false)
   
   // Relações
-  collections Collection[]
-  redemptions Redemption[]
+  collections Collection[] // Histórico de coletas (Ganhos)
+  redemptions Redemption[] // Histórico de compras (Gastos) -- NOVO
 
   createdAt   DateTime     @default(now())
 }
 
-// --- MERCADOS (Pontos de Coleta) ---
+// --- MERCADOS ---
 model Market {
   id          Int          @id @default(autoincrement())
-  name        String       // Razão Social (Travada via API)
-  tradeName   String?      // Nome Fantasia
+  name        String       
+  tradeName   String?      
   password    String
   cnpj        String       @unique
-  email       String       @unique // E-mail corporativo
-  
-  // TRAVA DE SEGURANÇA (O fiscal só loga se isso for true)
+  email       String       @unique 
   isVerified  Boolean      @default(false) 
   
   // Endereço
@@ -51,51 +47,61 @@ model Market {
   numero      String?
   
   collections Collection[]
-  
+  offers      Offer[]      // Ofertas criadas por este mercado -- NOVO
+
   createdAt   DateTime     @default(now())
 }
 
-// --- TRANSAÇÕES (O Token de Entrega) ---
+// --- TRANSAÇÕES DE RECICLAGEM (Ganha Pontos) ---
 model Collection {
   id           Int              @id @default(autoincrement())
-  // O ID será usado como TOKEN #1234
-  
-  materialType String           // Ex: "Vidro", "Papel"
-  weightInKg   Float?           // Estimado pelo User, confirmado pelo Fiscal
-  
+  materialType String           
+  weightInKg   Float?           
   status       CollectionStatus @default(PENDING)
   pointsEarned Int              @default(0)
   
   userId       Int
   user         User             @relation(fields: [userId], references: [id])
   
-  marketId     Int?             // Só preenche quando o mercado aceita
+  marketId     Int?             
   market       Market?          @relation(fields: [marketId], references: [id])
 
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 }
 
-// --- LOJA DE RECOMPENSAS ---
-model Reward {
-  id          Int          @id @default(autoincrement())
+// --- OFERTAS (Produtos/Cupons) -- NOVO ---
+model Offer {
+  id          Int      @id @default(autoincrement())
   title       String
-  description String
+  description String?
   cost        Int
-  imageUrl    String?
-  
-  redemptions Redemption[]
-}
+  image       String?  // Ícone
+  active      Boolean  @default(true)
 
-// --- HISTÓRICO DE RESGATES ---
+  // --- NOVOS CAMPOS: VALIDADE ---
+  validFrom   DateTime? // Opcional (se for nulo, vale pra sempre)
+  validUntil  DateTime? // Opcional
+
+  marketId    Int
+  market      Market   @relation(fields: [marketId], references: [id])
+
+  redemptions Redemption[]
+  createdAt   DateTime @default(now())
+}
+// --- RESGATES (Transação de Compra) -- NOVO ---
 model Redemption {
   id        Int      @id @default(autoincrement())
+  
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
-  rewardId  Int
-  reward    Reward   @relation(fields: [rewardId], references: [id])
   
-  code      String   
+  offerId   Int
+  offer     Offer    @relation(fields: [offerId], references: [id])
+  
+  costAtTime Int     // Quanto custou na hora (caso o preço mude depois)
+  couponCode String  // O código para mostrar no caixa (Ex: #X99-2024)
+  
   createdAt DateTime @default(now())
 }
 

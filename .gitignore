@@ -1,0 +1,14 @@
+# Ignorar arquivo de variáveis de ambiente
+.env
+
+# Logs e arquivos de sistema
+*.log
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Caso seja executado npm install na raiz sem querer
+node_modules/

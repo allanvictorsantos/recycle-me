@@ -1,0 +1,53 @@
+services:
+  # -------------------------
+  # BANCO DE DADOS (MySQL)
+  # -------------------------
+  db:
+    image: mysql:8.0
+    container_name: recycle_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # -------------------------
+  # BACKEND (API)
+  # -------------------------
+  api:
+    build: ./recycle-me-api
+    container_name: recycle_api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/${MYSQL_DATABASE}"
+      JWT_SECRET: ${JWT_SECRET}
+      Google_Maps_API_KEY: ${GOOGLE_MAPS_KEY}
+      PORT: 3000
+    volumes:
+      - ./recycle-me-api:/app
+      - /app/node_modules
+
+  # -------------------------
+  # FRONTEND (Client)
+  # -------------------------
+  client:
+    build: ./recycle-me-client
+    container_name: recycle_client
+    ports:
+      - "5173:5173"
+    environment:
+      # O Vite pega a chave do Google Maps aqui
+      VITE_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_KEY}
+      VITE_API_URL: "http://localhost:3000"
+    volumes:
+      - ./recycle-me-client:/app
+      - /app/node_modules
+
+volumes:
+  mysql_data:

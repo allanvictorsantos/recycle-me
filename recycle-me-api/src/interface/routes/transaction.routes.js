@@ -1,22 +1,19 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-// Importamos o SEU middleware oficial atualizado
 import { isAuthenticated } from '../../middlewares/isAuthenticated.js';
 
 const prisma = new PrismaClient();
 const router = Router();
 
-// Aplicamos a proteção em TODAS as rotas deste arquivo
 router.use(isAuthenticated);
 
 // ==================================================
-// 0. ROTA DE STATS (Para o Dashboard do Fiscal)
+// 0. ROTA DE STATS
 // ==================================================
 router.get('/market/stats', async (req, res) => {
   try {
     if (req.user.type !== 'market') return res.status(403).json({ message: "Acesso negado." });
 
-    // Busca todas as coletas JÁ FEITAS por este mercado
     const myCollections = await prisma.collection.findMany({
         where: { 
             marketId: req.user.id,
@@ -24,34 +21,27 @@ router.get('/market/stats', async (req, res) => {
         }
     });
 
-    // Calcula totais
     const totalWeight = myCollections.reduce((acc, curr) => acc + (curr.weightInKg || 0), 0);
     const totalPoints = myCollections.reduce((acc, curr) => acc + (curr.pointsEarned || 0), 0);
     
-    // Coletas de hoje
     const today = new Date().toDateString();
     const dailyCount = myCollections.filter(c => new Date(c.updatedAt).toDateString() === today).length;
 
-    res.json({
-        dailyCount,
-        totalWeight,
-        totalPoints
-    });
-
+    res.json({ dailyCount, totalWeight, totalPoints });
   } catch (error) {
     res.status(500).json({ message: "Erro ao buscar estatísticas." });
   }
 });
 
 // ==================================================
-// 1. ROTA DO USUÁRIO: CRIAR PEDIDO (GERAR TOKEN)
+// 1. CRIAR PEDIDO
 // ==================================================
 router.post('/create', async (req, res) => {
   try {
-    const { materialType, weightInKg } = req.body;
+    const { materialType, weightInKg, marketId } = req.body;
     
     if (req.user.type !== 'user') {
-      return res.status(403).json({ message: "Apenas usuários comuns podem criar pedidos de reciclagem." });
+      return res.status(403).json({ message: "Apenas usuários comuns podem criar pedidos." });
     }
 
     const transaction = await prisma.collection.create({
@@ -60,15 +50,15 @@ router.post('/create', async (req, res) => {
         weightInKg: parseFloat(weightInKg),
         status: 'PENDING',
         userId: req.user.id,
+        marketId: marketId ? parseInt(marketId) : null 
       }
     });
 
     res.status(201).json({
-      message: "Pedido criado com sucesso!",
+      message: "Pedido criado!",
       token: transaction.id,
       details: transaction
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Erro ao criar pedido." });
@@ -76,19 +66,14 @@ router.post('/create', async (req, res) => {
 });
 
 // ==================================================
-// 2. ROTA DO FISCAL: LER PEDIDO
+// 2. LER PEDIDO (Com trava de mercado exclusivo)
 // ==================================================
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (req.user.type !== 'market') {
-      return res.status(403).json({ message: "Acesso restrito a Pontos de Coleta." });
-    }
-    
-    if (req.user.isVerified === false) {
-       return res.status(403).json({ message: "Sua conta ainda está em análise. Você não pode validar coletas." });
-    }
+    if (req.user.type !== 'market') return res.status(403).json({ message: "Acesso restrito." });
+    if (req.user.isVerified === false) return res.status(403).json({ message: "Conta não verificada." });
 
     const transaction = await prisma.collection.findUnique({
       where: { id: parseInt(id) },
@@ -96,21 +81,24 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!transaction) return res.status(404).json({ message: "Código inválido." });
+    if (transaction.status === 'COMPLETED') return res.status(400).json({ message: "Pedido já validado." });
 
-    // Aviso se já foi usado
-    if (transaction.status === 'COMPLETED') {
-        return res.status(400).json({ message: "Este pedido já foi validado anteriormente." });
+    // --- TRAVA DE EXCLUSIVIDADE ---
+    // Se o pedido tem dono (marketId) e não sou eu, bloqueia.
+    if (transaction.marketId && transaction.marketId !== req.user.id) {
+        return res.status(403).json({ 
+            message: "Este pedido é exclusivo para outro ponto de coleta." 
+        });
     }
 
     res.json(transaction);
-
   } catch (error) {
     res.status(500).json({ message: "Erro ao buscar pedido." });
   }
 });
 
 // ==================================================
-// 3. ROTA DO FISCAL: FINALIZAR E PONTUAR
+// 3. FINALIZAR (Com trava de mercado exclusivo)
 // ==================================================
 router.patch('/:id/confirm', async (req, res) => {
   try {
@@ -120,11 +108,17 @@ router.patch('/:id/confirm', async (req, res) => {
     if (req.user.type !== 'market') return res.status(403).json({ message: "Acesso negado." });
     if (!req.user.isVerified) return res.status(403).json({ message: "Conta não verificada." });
 
-    // --- BLINDAGEM DE SEGURANÇA ---
     const checkTransaction = await prisma.collection.findUnique({ where: { id: parseInt(id) } });
+    
     if (!checkTransaction) return res.status(404).json({ message: "Pedido não encontrado." });
-    if (checkTransaction.status === 'COMPLETED') return res.status(400).json({ message: "ERRO: Token já utilizado!" });
-    // -----------------------------
+    if (checkTransaction.status === 'COMPLETED') return res.status(400).json({ message: "Token já utilizado!" });
+
+    // --- TRAVA DE EXCLUSIVIDADE ---
+    if (checkTransaction.marketId && checkTransaction.marketId !== req.user.id) {
+        return res.status(403).json({ 
+            message: "Você não pode validar este pedido (Destinado a outro local)." 
+        });
+    }
 
     const POINTS_PER_KG = 100;
     const pointsToGive = Math.floor(finalWeight * POINTS_PER_KG);
@@ -136,7 +130,7 @@ router.patch('/:id/confirm', async (req, res) => {
           status: 'COMPLETED',
           weightInKg: parseFloat(finalWeight),
           pointsEarned: pointsToGive,
-          marketId: req.user.id
+          marketId: req.user.id // Grava quem atendeu
         }
       });
 
@@ -147,15 +141,13 @@ router.patch('/:id/confirm', async (req, res) => {
           xp: { increment: pointsToGive }
         }
       });
-
       return updatedCollection;
     });
 
     res.json({
-      message: "Coleta validada e pontos transferidos!",
+      message: "Coleta validada!",
       pointsGenerated: pointsToGive
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Erro ao processar." });
