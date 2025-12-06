@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // 1. Importamos o navigate
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
+// --- DADOS MOCKADOS (Gráfico Bonito) ---
+const dataGrafico = [
+  { dia: 'Seg', kg: 45 },
+  { dia: 'Ter', kg: 80 },
+  { dia: 'Qua', kg: 112 },
+  { dia: 'Qui', kg: 90 },
+  { dia: 'Sex', kg: 145 },
+  { dia: 'Sáb', kg: 70 },
+  { dia: 'Dom', kg: 30 },
+];
 
 // Helper de ícones
 const getMaterialIcon = (material: string) => {
@@ -15,8 +27,8 @@ const getMaterialIcon = (material: string) => {
 };
 
 export default function MarketDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate(); // 2. Inicializamos o hook
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   
   const [tokenId, setTokenId] = useState('');
   const [transaction, setTransaction] = useState<any>(null);
@@ -25,7 +37,6 @@ export default function MarketDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Stats Reais
   const [stats, setStats] = useState({ dailyCount: 0, totalWeight: 0, totalPoints: 0 });
   const [history, setHistory] = useState<any[]>([]);
 
@@ -90,170 +101,248 @@ export default function MarketDashboard() {
     });
   };
 
+  // Custom Tooltip do Gráfico
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-900 text-white p-3 rounded-lg shadow-xl border border-gray-700">
+          <p className="text-sm font-bold mb-1">{label}</p>
+          <p className="text-brand-green font-black text-lg">{payload[0].value} kg</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 md:p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 md:p-8 font-sans transition-colors duration-300">
       
       {/* HEADER */}
-      <div className="max-w-6xl mx-auto mb-8 animate-fadeIn">
-        <div className="flex justify-between items-end mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
+      <div className="max-w-7xl mx-auto mb-8 animate-fadeIn">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-10 border-b border-gray-200 dark:border-gray-800 pb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-black text-gray-800 dark:text-white tracking-tight">Painel do Parceiro</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Gerencie coletas e impulsione a reciclagem.</p>
+            <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Painel do Parceiro</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Visão geral de desempenho e operações.</p>
           </div>
           <div className="flex gap-3">
-              {/* --- 3. BOTÃO CONECTADO AGORA --- */}
-              <button 
-                onClick={() => navigate('/minhas-ofertas')} 
-                className="text-sm font-bold text-white bg-brand-dark px-4 py-2 rounded-lg hover:bg-black transition-colors shadow-md flex items-center gap-2"
-              >
-                <i className="fas fa-tags"></i> Criar Ofertas
+              <button onClick={() => navigate('/minhas-ofertas')} className="px-5 py-2.5 bg-brand-green text-white rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                <i className="fas fa-tags"></i> Gerenciar Ofertas
               </button>
-              
-              <button onClick={logout} className="text-sm font-bold text-red-500 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                Sair
+              <button onClick={logout} className="px-5 py-2.5 border-2 border-red-100 text-red-500 rounded-xl font-bold hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20 transition-all flex items-center gap-2">
+                <i className="fas fa-sign-out-alt"></i> Sair
               </button>
           </div>
         </div>
 
-        {/* STATS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-5 transition-transform hover:-translate-y-1">
-            <div className="p-4 bg-green-100 text-green-600 rounded-2xl"><i className="fas fa-recycle text-3xl"></i></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Coletas Hoje</p><p className="text-3xl font-black text-gray-800 dark:text-white">{stats.dailyCount}</p></div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-5 transition-transform hover:-translate-y-1">
-            <div className="p-4 bg-blue-100 text-blue-600 rounded-2xl"><i className="fas fa-weight-hanging text-3xl"></i></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Kg Recebidos</p><p className="text-3xl font-black text-gray-800 dark:text-white">{stats.totalWeight.toFixed(1)} <span className="text-sm text-gray-400">kg</span></p></div>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-5 transition-transform hover:-translate-y-1">
-            <div className="p-4 bg-purple-100 text-purple-600 rounded-2xl"><i className="fas fa-star text-3xl"></i></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Pts Distribuídos</p><p className="text-3xl font-black text-gray-800 dark:text-white">{stats.totalPoints}</p></div>
-          </div>
+        {/* --- SEÇÃO DE ANALYTICS (NOVO LAYOUT) --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            {/* 1. Stats Cards (Empilhados na esquerda) */}
+            <div className="lg:col-span-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 h-full">
+                {/* Card 1 */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border-l-4 border-brand-green flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Coletas Hoje</p>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.dailyCount}</h3>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-brand-green text-xl">
+                        <i className="fas fa-recycle"></i>
+                    </div>
+                </div>
+
+                {/* Card 2 */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border-l-4 border-blue-500 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Reciclado</p>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.totalWeight.toFixed(0)} <span className="text-sm text-gray-400 font-medium">kg</span></h3>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-500 text-xl">
+                        <i className="fas fa-weight-hanging"></i>
+                    </div>
+                </div>
+
+                {/* Card 3 */}
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border-l-4 border-purple-500 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">EcoPoints Gerados</p>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white">{stats.totalPoints}</h3>
+                    </div>
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center text-purple-500 text-xl">
+                        <i className="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. O Gráfico (Ocupa 2/3) */}
+            <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-lg border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                <div className="flex justify-between items-center mb-6 relative z-10">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
+                        <i className="fas fa-chart-bar text-brand-green"></i> Volume Semanal
+                    </h3>
+                    <select className="bg-gray-100 dark:bg-gray-700 text-xs font-bold px-3 py-1 rounded-lg border-none outline-none text-gray-600 dark:text-gray-300 cursor-pointer">
+                        <option>Esta Semana</option>
+                        <option>Mês Passado</option>
+                    </select>
+                </div>
+
+                {/* Área do Gráfico */}
+                <div className="h-[250px] w-full relative z-10">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dataGrafico} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorKg" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#10B981" stopOpacity={1}/>
+                                    <stop offset="100%" stopColor="#059669" stopOpacity={0.6}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} opacity={0.1} />
+                            <XAxis dataKey="dia" stroke="#9CA3AF" tick={{fontSize: 12, fontWeight: 'bold'}} axisLine={false} tickLine={false} dy={10} />
+                            <YAxis stroke="#9CA3AF" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
+                            <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+                            <Bar dataKey="kg" fill="url(#colorKg)" radius={[8, 8, 8, 8]} barSize={40} animationDuration={1500} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+                
+                {/* Decoração de fundo */}
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-green/5 rounded-full blur-3xl"></div>
+            </div>
         </div>
 
-        {/* MAIN GRID */}
+        {/* --- SEÇÃO OPERACIONAL (Validar + Histórico) --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* --- ESQUERDA: VALIDAÇÃO (8 colunas) --- */}
+          {/* Esquerda: Terminal de Validação (Largo) */}
           <div className="lg:col-span-8 space-y-6">
             
             {(error || success) && (
-              <div className={`p-4 rounded-xl text-center font-bold animate-slideDown shadow-md ${error ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
-                {error ? <i className="fas fa-exclamation-triangle mr-2"></i> : <i className="fas fa-check-circle mr-2"></i>}
+              <div className={`p-4 rounded-2xl text-center font-bold animate-slideDown shadow-lg ${error ? 'bg-red-500 text-white' : 'bg-green-500 text-white'}`}>
+                {error ? <i className="fas fa-exclamation-circle mr-2"></i> : <i className="fas fa-check-circle mr-2"></i>}
                 {error || success}
               </div>
             )}
 
-            {/* CONTAINER DE BUSCA */}
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-200 dark:border-gray-700 relative overflow-hidden min-h-[400px] flex flex-col justify-center items-center">
+            {/* CARD PRINCIPAL DE AÇÃO */}
+            <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[450px] flex flex-col justify-center relative">
               
+              {/* Fundo Decorativo */}
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-green via-emerald-500 to-teal-500"></div>
+
               {!transaction ? (
-                <div className="text-center w-full max-w-md">
-                  <div className="mb-6">
-                    <span className="inline-block p-3 rounded-full bg-gray-100 dark:bg-gray-700 mb-3"><i className="fas fa-qrcode text-2xl text-gray-400"></i></span>
-                    <h2 className="text-2xl font-black text-gray-800 dark:text-white mb-1">Validar Coleta</h2>
-                    <p className="text-gray-500 text-sm">Insira o código de entrega.</p>
+                <div className="p-10 text-center max-w-lg mx-auto w-full">
+                  <div className="mb-8">
+                    <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl text-gray-400 animate-pulse-slow">
+                        <i className="fas fa-qrcode"></i>
+                    </div>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Validar Coleta</h2>
+                    <p className="text-gray-500">Digite o código numérico apresentado pelo cliente.</p>
                   </div>
                   
                   <form onSubmit={handleSearch} className="relative w-full">
-                    <input 
-                      type="number" 
-                      className="w-full text-center text-6xl font-black tracking-widest p-6 border-2 border-gray-200 dark:border-gray-600 rounded-3xl bg-gray-50 dark:bg-gray-900 dark:text-white focus:outline-none focus:border-brand-green focus:ring-4 focus:ring-green-500/20 transition-all placeholder-gray-200"
-                      placeholder="000"
-                      value={tokenId}
-                      onChange={(e) => setTokenId(e.target.value)}
-                      autoFocus
-                    />
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-green to-teal-500 rounded-2xl opacity-30 group-focus-within:opacity-100 transition duration-500 blur"></div>
+                        <input 
+                          type="number" 
+                          className="relative w-full text-center text-5xl font-black tracking-[0.2em] p-6 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none placeholder-gray-200 dark:placeholder-gray-700 transition-all"
+                          placeholder="000"
+                          value={tokenId}
+                          onChange={(e) => setTokenId(e.target.value)}
+                          autoFocus
+                        />
+                    </div>
                     <button 
                       type="submit" 
                       disabled={!tokenId || loading}
-                      className="w-full mt-6 py-5 bg-brand-dark hover:bg-black text-white rounded-2xl font-bold text-xl shadow-lg transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                      className="w-full mt-8 py-4 bg-brand-dark hover:bg-black text-white rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 btn-glow-dark"
                     >
                       {loading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-search"></i>}
-                      {loading ? 'Buscando...' : 'BUSCAR'}
+                      {loading ? 'Verificando...' : 'Buscar Código'}
                     </button>
                   </form>
                 </div>
               ) : (
-                <div className="animate-fadeIn w-full max-w-lg">
-                   <div className="bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-2xl border-2 border-brand-green/30 relative">
-                        {/* Header do Cliente */}
-                        <div className="bg-gradient-to-b from-brand-green/10 to-transparent p-8">
-                            <div className="flex justify-between items-start mb-4">
-                                <span className="flex items-center gap-2 text-xs font-bold text-brand-green uppercase tracking-wider bg-white dark:bg-gray-900 px-3 py-1.5 rounded-full shadow-sm">
-                                    <i className="fas fa-user-check"></i> Identificado
-                                </span>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full">
-                                    #{transaction.id}
-                                </span>
+                // TELA DE CONFIRMAÇÃO (Com visual "Terminal POS")
+                <div className="w-full h-full flex flex-col animate-fadeIn">
+                    <div className="bg-gray-50 dark:bg-gray-900/50 p-8 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-xs font-bold text-brand-green bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full uppercase tracking-wider">Cliente Encontrado</span>
+                            <span className="text-sm font-mono text-gray-400">Token #{transaction.id}</span>
+                        </div>
+                        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2 leading-tight">{transaction.user.name}</h2>
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-medium">
+                            <i className={`fas ${getMaterialIcon(transaction.materialType)}`}></i>
+                            <span className="capitalize">{transaction.materialType}</span>
+                        </div>
+                    </div>
+
+                    <div className="p-8 flex-grow flex flex-col justify-center items-center">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">PESO NA BALANÇA (KG)</p>
+                        
+                        <div className="flex items-center gap-6 mb-6">
+                            <button onClick={() => adjustWeight(-0.5)} className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-red-100 hover:text-red-500 transition-colors text-2xl flex items-center justify-center text-gray-500"><i className="fas fa-minus"></i></button>
+                            <div className="relative group">
+                                <input 
+                                    type="number" step="0.1" 
+                                    value={finalWeight} onChange={(e) => setFinalWeight(e.target.value)} 
+                                    className="w-48 text-center text-7xl font-black bg-transparent border-b-4 border-gray-200 focus:border-brand-green outline-none text-gray-900 dark:text-white p-2" 
+                                />
                             </div>
-                            <h3 className="text-3xl md:text-4xl font-black text-gray-800 dark:text-white leading-tight mb-3 truncate">
-                                {transaction.user.name}
-                            </h3>
-                            <div className="inline-flex items-center gap-2 bg-brand-green text-white px-4 py-2 rounded-full font-bold text-sm uppercase tracking-wider shadow-sm">
-                                <i className={`fas ${getMaterialIcon(transaction.materialType)}`}></i>
-                                {transaction.materialType}
-                            </div>
+                            <button onClick={() => adjustWeight(+0.5)} className="w-16 h-16 rounded-full bg-brand-green text-white hover:bg-emerald-600 transition-colors text-2xl flex items-center justify-center shadow-lg shadow-brand-green/30"><i className="fas fa-plus"></i></button>
                         </div>
 
-                        <div className="p-6 pt-2">
-                            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl p-6 mb-6 border border-gray-100 dark:border-gray-700 relative">
-                                <label className="block text-center text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                                    <i className="fas fa-balance-scale"></i> Confirmar Peso Real
-                                </label>
-                                
-                                <div className="flex items-center justify-between gap-4">
-                                <button onClick={() => adjustWeight(-0.5)} className="w-14 h-14 rounded-full bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 text-gray-400 hover:text-brand-dark hover:border-brand-dark transition-all flex items-center justify-center text-xl shadow-sm active:scale-95"><i className="fas fa-minus"></i></button>
-                                <div className="flex-1 relative text-center flex justify-center items-baseline">
-                                    <input type="number" step="0.1" value={finalWeight} onChange={(e) => setFinalWeight(e.target.value)} className="w-32 text-center text-5xl font-black bg-transparent focus:border-b-2 focus:border-brand-green outline-none dark:text-white p-2 z-10" />
-                                    <span className="text-xl font-bold text-gray-400 ml-1">KG</span>
-                                </div>
-                                <button onClick={() => adjustWeight(+0.5)} className="w-14 h-14 rounded-full bg-brand-green text-white hover:bg-green-600 transition-all flex items-center justify-center text-xl shadow-lg active:scale-95"><i className="fas fa-plus"></i></button>
-                                </div>
-                                <div className="text-center mt-4 animate-pulse"><span className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">Estimativa:</span><span className="text-lg font-black text-brand-green">+{Math.floor((parseFloat(finalWeight || '0') * 100))} Pts</span></div>
-                            </div>
+                        <p className="text-brand-green font-bold text-lg animate-pulse">
+                            Estimativa: +{Math.floor((parseFloat(finalWeight || '0') * 100))} EcoPoints
+                        </p>
+                    </div>
 
-                            <div className="flex gap-3">
-                                <button onClick={() => { setTransaction(null); setError(null); }} className="flex-1 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-gray-500 font-bold hover:bg-gray-100 transition-all uppercase tracking-wider text-xs">Cancelar</button>
-                                <button onClick={handleConfirm} disabled={loading} className="flex-[2] py-4 bg-brand-green text-white rounded-2xl font-bold hover:scale-[1.02] transition-transform shadow-lg btn-glow-green flex items-center justify-center gap-2 uppercase tracking-wider text-xs">{loading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-check"></i>} CONFIRMAR</button>
-                            </div>
-                        </div>
+                    <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-4 bg-gray-50 dark:bg-gray-900/30">
+                        <button onClick={() => { setTransaction(null); setError(null); }} className="flex-1 py-4 border-2 border-gray-300 dark:border-gray-600 text-gray-500 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+                        <button onClick={handleConfirm} disabled={loading} className="flex-[2] py-4 bg-brand-green text-white rounded-xl font-black shadow-xl hover:scale-[1.02] transition-transform btn-glow-green uppercase tracking-wider">
+                            {loading ? 'Processando...' : 'CONFIRMAR'}
+                        </button>
                     </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* --- DIREITA: SIDEBAR (4 colunas) --- */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Histórico com Altura Fixa e Scroll */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-200 dark:border-gray-700 h-[500px] flex flex-col">
-              <h3 className="font-bold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2 uppercase text-xs tracking-wider border-b pb-2 border-gray-100 dark:border-gray-700 shrink-0">
-                <i className="fas fa-clock text-brand-green"></i> Histórico Recente
+          {/* Direita: Sidebar Histórico */}
+          <div className="lg:col-span-4">
+            <div className="bg-gray-900 text-white p-6 rounded-[2rem] shadow-xl border border-gray-700 h-[600px] flex flex-col relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/20 rounded-full blur-3xl"></div>
+              
+              <h3 className="font-bold text-lg mb-6 flex items-center gap-3 z-10">
+                <i className="fas fa-history text-brand-green"></i> Últimas Entregas
               </h3>
-              <div className="space-y-3 overflow-y-auto flex-grow pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              
+              <div className="flex-grow overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-gray-700 z-10">
                 {history.length === 0 ? (
-                    <p className="text-center text-gray-400 text-sm py-10">Nenhuma coleta realizada hoje.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
+                        <i className="far fa-list-alt text-4xl mb-2"></i>
+                        <p className="text-sm">Lista vazia hoje.</p>
+                    </div>
                 ) : (
                     history.map((item: any, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-transparent hover:border-brand-green/30 transition-colors group">
+                    <div key={index} className="flex justify-between items-center p-4 bg-gray-800 rounded-2xl border border-gray-700 hover:border-brand-green/50 transition-all group">
                         <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 flex items-center justify-center text-brand-dark font-bold shadow-sm group-hover:bg-brand-green group-hover:text-white transition-colors">
-                            {item.user.charAt(0)}
+                            <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-gray-300 group-hover:bg-brand-green group-hover:text-white transition-colors">
+                                {item.user.charAt(0)}
+                            </div>
+                            <div>
+                                <p className="font-bold text-sm text-white leading-tight">{item.user.split(' ')[0]} {item.user.split(' ')[1]}</p>
+                                <p className="text-xs text-gray-400 mt-0.5 capitalize">{item.material} • {item.weight}</p>
+                            </div>
                         </div>
-                        <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-gray-800 dark:text-white leading-none truncate w-[100px]">{item.user.split(' ')[0]}</p>
-                            <p className="text-[10px] text-gray-400 uppercase font-bold mt-1">{item.material} • {item.weight}</p>
-                        </div>
-                        </div>
-                        <span className="text-xs font-black text-green-600 whitespace-nowrap">+{Math.floor(parseFloat(item.weight.replace('kg','')) * 100)}</span>
+                        <span className="text-brand-green font-bold text-sm">+{Math.floor(parseFloat(item.weight.replace('kg','')) * 100)} pts</span>
                     </div>
                     ))
                 )}
               </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-800 text-center z-10">
+                  <button className="text-xs font-bold text-gray-400 hover:text-white transition-colors">Ver histórico completo</button>
+              </div>
             </div>
-
           </div>
 
         </div>
