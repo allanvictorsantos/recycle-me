@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+// 1. ADICIONEI O 'Navigate' AQUI NAS IMPORTAÇÕES 👇
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 
 // Contexto e Layout
 import { AuthProvider } from './context/AuthContext';
@@ -29,10 +30,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<App />}>
 
             {/* ===================================================== */}
+            {/* 🟢 CORREÇÃO DO INDEX.HTML (ADICIONE ESTA LINHA) 👇    */}
+            {/* ===================================================== */}
+            <Route path="index.html" element={<Navigate to="/" replace />} />
+
+            {/* ===================================================== */}
             {/* 🟢 ÁREA PÚBLICA (QUALQUER UM ACESSA)                 */}
             {/* ===================================================== */}
             
-            {/* Home Page (Início) - TEM QUE FICAR AQUI! */}
+            {/* Home Page (Início) */}
             <Route index element={<HomePage />} />
             
             <Route path="login" element={<LoginPage />} />
