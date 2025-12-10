@@ -12,40 +12,43 @@ const router = Router();
 // Endereço final: POST /markets
 router.post("/", async (req, res) => {
   try {
-    // 1. ADICIONADO: Campo 'email' e 'tradeName' na extração
     const { name, tradeName, cnpj, email, password, cep, numero } = req.body;
 
     // --- Validação de Campos Obrigatórios ---
-    // 2. ADICIONADO: 'email' na validação
     if (!name || !cnpj || !email || !password || !cep || !numero) {
       return res.status(400).json({
         message: "Todos os campos são obrigatórios: nome, cnpj, email, senha, cep e número.",
       });
     }
 
-    // --- 3. NOVA SEGURANÇA: Validação de E-mail Corporativo ---
+    // --- Validação de E-mail Corporativo (Opcional, se quiser tirar pro TCC pode) ---
     const forbiddenDomains = ['gmail.com', 'hotmail.com', 'outlook.com', 'yahoo.com', 'live.com', 'bol.com.br', 'uol.com.br', 'icloud.com'];
     const emailDomain = email.split('@')[1];
 
-    if (forbiddenDomains.includes(emailDomain)) {
-       return res.status(400).json({ 
-         message: 'Para cadastrar uma empresa, utilize um e-mail corporativo (ex: contato@suaempresa.com.br). E-mails pessoais não são permitidos.' 
-       });
-    }
+    // DICA: Se quiser aceitar gmail pra testar hoje, comente as linhas abaixo:
+    // if (forbiddenDomains.includes(emailDomain)) {
+    //    return res.status(400).json({ 
+    //      message: 'Para cadastrar uma empresa, utilize um e-mail corporativo.' 
+    //    });
+    // }
 
-    // --- CHAMADA PARA A API DO GOOGLE GEOCODING (Mantida igual) ---
+    // --- GEOCODING (O GPS AUTOMÁTICO) ---
     let latitude = null;
     let longitude = null;
     let address = null;
 
     try {
+      // Melhorei a string para o Google achar mais fácil
       const addressString = `${cep}, ${numero}, Brasil`;
-      const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+      
+      // CORREÇÃO 1: Nome exato da variável no Render
+      const apiKey = process.env.Google_Maps_API_KEY; 
 
       if (!apiKey) {
-         console.error("ERRO: Chave da API do Google Maps não configurada.");
+         console.error("ERRO CRÍTICO: Chave da API do Google Maps não encontrada nas variáveis.");
       } else {
-        console.log(`Buscando coordenadas para: ${addressString}`);
+        console.log(`📡 Buscando GPS para: ${addressString}`);
+        
         const response = await axios.get(
           "https://maps.googleapis.com/maps/api/geocode/json",
           {
@@ -61,88 +64,76 @@ router.post("/", async (req, res) => {
           latitude = location.lat;
           longitude = location.lng;
           address = response.data.results[0].formatted_address;
+          console.log(`✅ Localizado: Lat ${latitude}, Lng ${longitude}`);
         } else {
-          console.warn(`Aviso: Google Geocoding não encontrou resultados.`);
+          console.warn(`⚠️ Google não achou o endereço. Status: ${response.data.status}`);
+          // Fallback: Se não achar, tenta salvar null ou um valor padrão se preferir
         }
       }
     } catch (geoError) {
-      console.error("Erro ao chamar a API do Google Geocoding:", geoError.message);
+      console.error("Erro na conexão com Google Maps:", geoError.message);
     }
     
-    // --- Hashing da Senha e Criação no Prisma ---
+    // --- Salvar no Banco ---
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // 4. Salvamos TODOS os dados com a trava de segurança
     const newMarket = await prisma.market.create({
       data: {
-        name,       // Razão Social
-        tradeName,  // Nome Fantasia (opcional)
+        name,      
+        tradeName, 
         cnpj,
-        email,      // Novo campo obrigatório
+        email,     
         password: hashedPassword,
         cep,
         numero,
-        address,
+        address: address || `${cep}, ${numero}`, // Se o Google falhar, salva o que tem
         latitude,
         longitude,
-        isVerified: false // IMPORTANTE: Nasce bloqueado (Invisível no mapa)
+        // CORREÇÃO 2: True para aparecer no mapa imediatamente na apresentação
+        isVerified: true 
       },
     });
 
-    // Removemos a senha da resposta
     const { password: _, ...marketWithoutPassword } = newMarket;
 
-    // Mensagem customizada para avisar sobre a análise
     res.status(201).json({
-        message: "Cadastro realizado! Sua conta está em análise de compliance e será ativada em até 24h.",
+        message: "Cadastro realizado com sucesso!",
         market: marketWithoutPassword
     });
 
   } catch (dbError) {
-    // Tratamento de erro de duplicidade (CNPJ ou EMAIL)
     if (dbError.code === "P2002") {
         const target = dbError.meta?.target;
-        if (target?.includes("cnpj")) {
-            return res.status(409).json({ message: "Este CNPJ já está cadastrado." });
-        }
-        if (target?.includes("email")) {
-            return res.status(409).json({ message: "Este e-mail já está cadastrado." });
-        }
+        if (target?.includes("cnpj")) return res.status(409).json({ message: "CNPJ já cadastrado." });
+        if (target?.includes("email")) return res.status(409).json({ message: "E-mail já cadastrado." });
     }
     
-    console.error("Erro ao criar mercado no banco:", dbError);
-    res.status(500).json({
-        message: "Não foi possível criar o mercado.",
-        error: dbError.message,
-      });
+    console.error("Erro no banco:", dbError);
+    res.status(500).json({ message: "Erro interno no servidor." });
   }
 });
 
-// --- Rota para LISTAR (Atualizada para retornar isVerified) ---
+// --- Rota para LISTAR ---
 router.get("/", async (req, res) => {
   try {
     const markets = await prisma.market.findMany({
       select: {
         id: true,
         name: true,
-        tradeName: true, // Útil para mostrar no mapa
+        tradeName: true,
         cnpj: true,
         cep: true,
         numero: true,
         address: true,
         latitude: true,
         longitude: true,
-        isVerified: true // O Front precisa saber disso para filtrar ou mostrar ícone de "Verificado"
+        isVerified: true
       },
     });
     res.status(200).json(markets);
   } catch (error) {
-    console.error("Erro ao buscar mercados:", error);
-    res.status(500).json({
-        message: "Não foi possível buscar os mercados.",
-        error: error.message,
-      });
+    res.status(500).json({ message: "Erro ao buscar mercados." });
   }
 });
 

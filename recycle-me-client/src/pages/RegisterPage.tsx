@@ -54,11 +54,12 @@ function RegisterPage() {
         if (!isCnpjReady) return;
         setFetchingCnpj(true); setError(null);
         try {
+            // CORREÇÃO: Uso da variável de ambiente
             const checkResponse = await axios.get(`${import.meta.env.VITE_API_URL}/markets`);
             const isRegistered = checkResponse.data.some((m: any) => m.cnpj.replace(/[^\d]/g, '') === cnpj.replace(/[^\d]/g, ''));
             if (isRegistered) { setError("CNPJ já cadastrado. Faça login."); setFetchingCnpj(false); return; }
             
-            // API Externa (BrasilAPI)
+            // API Externa (BrasilAPI) - MANTÉM URL
             const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj.replace(/[^\d]/g, '')}`);
             setRazaoSocial(response.data.razao_social);
             setTradeName(response.data.nome_fantasia || response.data.razao_social);
@@ -75,6 +76,7 @@ function RegisterPage() {
                 password: password,
                 ...(cadastroType === 'pf' ? { email } : { cnpj: cnpj.replace(/[^\d]/g, '') })
             };
+            // CORREÇÃO: Uso da variável de ambiente
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, loginData);
             login(response.data.token, response.data.user);
             if (response.data.user.type === 'market') navigate('/painel-fiscal', { replace: true });
@@ -85,6 +87,7 @@ function RegisterPage() {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError(null); setSuccess(null); setLoading(true);
+        // CORREÇÃO: Uso da variável de ambiente
         const url = cadastroType === 'pf' ? `${import.meta.env.VITE_API_URL}/users` : `${import.meta.env.VITE_API_URL}/markets`;
         const body = cadastroType === 'pf' 
             ? { name, email, password }
@@ -103,30 +106,8 @@ function RegisterPage() {
         if (step < currentStep) setCurrentStep(step);
     };
 
-    // Componente wrapper para inputs "antigos" (estilo bloco)
- 
-
-    // --- NOVO COMPONENTE: INPUT ESTILO "CLEAN" (Transparente + Borda) ---
-    // Usado especificamente para os dados da empresa para não poluir o visual
-    const UnderlinedInput = ({ label, value, onChange, iconClass, readOnly = false, placeholder }: any) => (
-        <div className="relative group">
-            <label className="text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-1 block">{label}</label>
-            <div className="relative flex items-center">
-                <i className={`fas ${iconClass} absolute left-0 text-gray-400 transition-colors group-focus-within:text-brand-green`}></i>
-                <input
-                    type="text"
-                    value={value}
-                    onChange={onChange}
-                    readOnly={readOnly}
-                    placeholder={placeholder}
-                    className={`w-full pl-7 py-2 bg-transparent border-b-2 
-                        ${readOnly 
-                            ? 'border-gray-200 dark:border-gray-700 text-gray-500 cursor-default' 
-                            : 'border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-brand-green'} 
-                        rounded-none focus:outline-none transition-all placeholder-gray-400/50 text-sm font-medium`}
-                />
-            </div>
-        </div>
+    const InputWrapper = ({ disabled, children }: { disabled?: boolean, children: React.ReactNode }) => (
+        <div className={`transition-all duration-300 ${disabled ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md pointer-events-none' : ''}`}>{children}</div>
     );
 
     const PasswordRequirements = () => (
@@ -149,6 +130,7 @@ function RegisterPage() {
     return (
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-4 transition-colors duration-300">
             
+            {/* CONTAINER GÊMEO: 750px, Sombra Suave */}
             <div className="w-full max-w-6xl h-[750px] grid md:grid-cols-2 rounded-[2.5rem] shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
 
                 <div className="hidden md:block relative h-full">
@@ -167,6 +149,7 @@ function RegisterPage() {
                         <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm font-medium">Comece sua jornada sustentável</p>
                     </div>
 
+                    {/* SELETOR PADRONIZADO */}
                     <div className="shrink-0 w-full flex flex-col items-center mb-8">
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full mb-8 relative">
                             <button type="button" onClick={() => { setCadastroType('pf'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pf' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Pessoal</button>
@@ -238,50 +221,16 @@ function RegisterPage() {
                                             <InputField id="cnpj" label="CNPJ da Empresa" placeholder="00.000.000/0000-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} iconClass="fa-building"/>
                                         </div>
                                     )}
-                                    
-                                    {/* --- AQUI ESTÁ A MUDANÇA PRINCIPAL PARA O VISUAL CLEAN --- */}
                                     {currentStep === 2 && (
-                                        <div className="animate-slideRight space-y-6">
-                                            {/* Razão Social (Somente Leitura - Clean) */}
-                                            <UnderlinedInput 
-                                                label="Razão Social" 
-                                                value={razaoSocial} 
-                                                onChange={() => {}} 
-                                                iconClass="fa-lock" 
-                                                readOnly={true} 
-                                            />
-                                            
-                                            {/* Nome Fantasia (Editável - Clean) */}
-                                            <UnderlinedInput 
-                                                label="Nome Fantasia" 
-                                                value={tradeName} 
-                                                onChange={(e: any) => setTradeName(e.target.value)} 
-                                                placeholder="Ex: Mercado Central" 
-                                                iconClass="fa-store" 
-                                            />
-
-                                            <div className="grid grid-cols-2 gap-6">
-                                                {/* CEP (Somente Leitura - Clean) */}
-                                                <UnderlinedInput 
-                                                    label="CEP" 
-                                                    value={cep} 
-                                                    onChange={() => {}} 
-                                                    iconClass="fa-map-marker-alt" 
-                                                    readOnly={true} 
-                                                />
-                                                
-                                                {/* Número (Editável - Clean) */}
-                                                <UnderlinedInput 
-                                                    label="Número" 
-                                                    value={numero} 
-                                                    onChange={(e: any) => setNumero(e.target.value)} 
-                                                    placeholder="123" 
-                                                    iconClass="fa-hashtag" 
-                                                />
+                                        <div className="animate-slideRight space-y-4">
+                                            <InputWrapper disabled><InputField id="razaoSocial" label="Razão Social" value={razaoSocial} onChange={() => {}} placeholder="" iconClass="fa-lock" disabled={true} /></InputWrapper>
+                                            <InputField id="tradeName" label="Nome Fantasia" value={tradeName} onChange={(e) => setTradeName(e.target.value)} placeholder="Ex: Mercado Central" iconClass="fa-store"/>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <InputWrapper disabled><InputField id="cep" label="CEP" value={cep} onChange={() => {}} placeholder="" iconClass="fa-map-marker-alt" disabled={true} /></InputWrapper>
+                                                <InputField id="numero" label="Número" value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="123" iconClass="fa-hashtag"/>
                                             </div>
                                         </div>
                                     )}
-
                                     {currentStep === 3 && (
                                         <div className="animate-slideRight space-y-4">
                                             <InputField id="email" label="E-mail Corporativo" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@empresa.com" iconClass="fa-envelope"/>
@@ -329,7 +278,7 @@ function RegisterPage() {
                                         {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Criar Conta'}
                                     </button>
                                 )}
-                            </div> 
+                            </div>
                         </div>
                     </form>
 
