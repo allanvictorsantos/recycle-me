@@ -83,7 +83,6 @@ function MapPage() {
     if (!isLoaded) return;
     const fetchMarkets = async () => {
         try {
-            // CORREÇÃO: Uso da variável de ambiente
             const response = await fetch(`${import.meta.env.VITE_API_URL}/markets`);
             if (response.ok) {
                 const data: MarketData[] = await response.json();
@@ -293,7 +292,15 @@ function MapPage() {
           )}
         </GoogleMap>
         
-        <button onClick={findMyLocation} disabled={isLocating} className="absolute bottom-6 right-6 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-white hover:text-brand-green transition-colors" title="Minha Localização"><i className="fas fa-crosshairs text-lg"></i></button>
+        {/* AQUI ESTÁ A MUDANÇA: 'right-6' virou 'left-6' */}
+        <button 
+          onClick={findMyLocation} 
+          disabled={isLocating} 
+          className="absolute bottom-6 left-6 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center text-gray-600 dark:text-white hover:text-brand-green transition-colors" 
+          title="Minha Localização"
+        >
+            <i className="fas fa-crosshairs text-lg"></i>
+        </button>
       </div>
     </div>
   );

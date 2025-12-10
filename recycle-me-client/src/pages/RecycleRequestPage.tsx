@@ -3,12 +3,13 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+// Ícones corrigidos e padrão visual
 const materials = [
-  { id: 'vidro', label: 'Vidro', icon: 'fa-wine-bottle' },
-  { id: 'papel', label: 'Papel', icon: 'fa-newspaper' },
-  { id: 'plastico', label: 'Plástico', icon: 'fa-bottle-water' },
-  { id: 'metal', label: 'Metal', icon: 'fa-can-food' },
-  { id: 'eletronico', label: 'Eletrônico', icon: 'fa-microchip' },
+  { id: 'vidro', label: 'Vidro', icon: 'fa-wine-bottle', color: 'text-green-500', bg: 'bg-green-100' },
+  { id: 'papel', label: 'Papel', icon: 'fa-newspaper', color: 'text-blue-500', bg: 'bg-blue-100' },
+  { id: 'plastico', label: 'Plástico', icon: 'fa-bottle-water', color: 'text-red-500', bg: 'bg-red-100' },
+  { id: 'metal', label: 'Metal', icon: 'fa-magnet', color: 'text-yellow-600', bg: 'bg-yellow-100' }, // Ícone corrigido
+  { id: 'eletronico', label: 'Eletrôn.', icon: 'fa-microchip', color: 'text-purple-500', bg: 'bg-purple-100' },
 ];
 
 export default function RecycleRequestPage() {
@@ -41,52 +42,40 @@ export default function RecycleRequestPage() {
       );
       setCreatedToken(response.data.token);
     } catch (err: any) {
-      setError('Erro ao criar pedido. Tente novamente.');
+      setError('Erro ao criar pedido.');
     } finally {
       setLoading(false);
     }
   };
 
-  // --- TELA DE SUCESSO (COMPACTADA) ---
+  // --- TICKET DE SUCESSO (COMPACTO) ---
   if (createdToken) {
     return (
       <div className="min-h-screen bg-brand-cream dark:bg-brand-dark flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative animate-scaleIn">
-          <div className="bg-brand-green p-5 text-center relative">
-             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg animate-bounce-slow">
-               <i className="fas fa-check text-3xl text-brand-green"></i>
+        <div className="bg-white dark:bg-gray-900 w-full max-w-xs rounded-3xl shadow-xl overflow-hidden relative animate-scaleIn">
+          <div className="bg-brand-green p-4 text-center">
+             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm animate-bounce-slow">
+               <i className="fas fa-check text-xl text-brand-green"></i>
              </div>
-             <h2 className="text-xl font-black text-white tracking-tight">Pedido Confirmado!</h2>
-             <p className="text-green-100 text-xs font-medium mt-1">
-                Leve até: <span className="font-bold text-white underline decoration-white/50 underline-offset-4">{preSelectedMarket ? preSelectedMarket.name : 'Qualquer Ponto'}</span>
-             </p>
+             <h2 className="text-lg font-black text-white">Confirmado!</h2>
+             <p className="text-green-50 text-[10px]">Leve até: <span className="font-bold">{preSelectedMarket ? preSelectedMarket.name : 'Qualquer Ponto'}</span></p>
           </div>
 
-          <div className="p-6 text-center">
-             <p className="text-gray-500 text-xs mb-4">Mostre este código numérico ao fiscal.</p>
-             <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border-2 border-dashed border-brand-green/50 mb-6 relative group cursor-pointer hover:bg-green-50 dark:hover:bg-gray-700 transition-colors">
-                <span className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 text-brand-green text-[10px] font-bold px-2 py-0.5 uppercase tracking-widest border border-brand-green/20 rounded-full shadow-sm">Seu Token</span>
-                <span className="text-5xl font-black text-gray-800 dark:text-white tracking-tighter group-hover:scale-110 transition-transform block">{createdToken}</span>
+          <div className="p-5 text-center">
+             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 border-2 border-dashed border-brand-green/30 mb-4 relative">
+                <span className="text-[9px] uppercase font-bold text-gray-400 block mb-1">Seu Código</span>
+                <span className="text-4xl font-black text-brand-dark dark:text-white tracking-tighter">{createdToken}</span>
              </div>
 
-             <div className="space-y-2">
+             <div className="grid gap-2">
                 {preSelectedMarket && (
-                    <button 
-                      onClick={() => navigate('/mapa', { state: { routeToMarket: preSelectedMarket } })}
-                      className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-md hover:bg-blue-700 text-sm flex items-center justify-center gap-2"
-                    >
+                    <button onClick={() => navigate('/mapa', { state: { routeToMarket: preSelectedMarket } })} className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-700">
                       <i className="fas fa-location-arrow"></i> Ver Rota
                     </button>
                 )}
-                <button 
-                  onClick={() => { setCreatedToken(null); setSelectedMaterial(''); setWeight(''); }}
-                  className="w-full py-3 bg-brand-dark text-white rounded-xl font-bold shadow-md hover:bg-black text-sm btn-glow-dark"
-                >
-                  Nova Reciclagem
+                <button onClick={() => { setCreatedToken(null); setSelectedMaterial(''); setWeight(''); }} className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg font-bold text-xs hover:bg-gray-200">
+                  Novo Pedido
                 </button>
-                {!preSelectedMarket && (
-                    <button onClick={() => navigate('/mapa')} className="w-full py-2 text-gray-500 dark:text-gray-400 font-bold hover:text-brand-green text-xs rounded-xl transition-colors">Voltar ao Mapa</button>
-                )}
              </div>
           </div>
         </div>
@@ -94,85 +83,103 @@ export default function RecycleRequestPage() {
     );
   }
 
-  // --- FORMULÁRIO (COMPACTADO) ---
+  // --- FORMULÁRIO ULTRA COMPACTO ---
   return (
     <div className="min-h-screen bg-brand-cream dark:bg-brand-dark p-4 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-5 border border-gray-100 dark:border-gray-800">
+      <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-3xl shadow-xl p-5 border border-gray-100 dark:border-gray-800">
         
-        <div className="text-center mb-5">
-          <div className="inline-block p-2 bg-green-100 dark:bg-green-900/30 rounded-full mb-2">
-             <i className="fas fa-recycle text-xl text-brand-green"></i>
+        {/* Cabeçalho Minimalista */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-lg font-bold text-brand-dark dark:text-white leading-tight">Nova Reciclagem</h1>
+            <p className="text-[10px] text-gray-500">Olá, <span className="font-bold">{user?.name.split(' ')[0]}</span></p>
           </div>
-          <h1 className="text-xl font-bold text-brand-dark dark:text-white">O que vamos reciclar?</h1>
-          <p className="text-xs text-gray-500">Olá <span className="font-bold text-brand-green">{user?.name.split(' ')[0]}</span>!</p>
+          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+            <i className="fas fa-leaf text-brand-green text-sm"></i>
+          </div>
         </div>
 
-        {preSelectedMarket ? (
-            <div className="bg-brand-green/10 border border-brand-green/20 p-3 rounded-lg flex items-center gap-3 mb-4 animate-fadeIn">
-                <div className="w-8 h-8 bg-brand-green text-white rounded-full flex items-center justify-center text-sm shadow-md">
-                    <i className="fas fa-store"></i>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                    <p className="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Local de Entrega</p>
-                    <p className="text-brand-dark dark:text-white font-bold text-xs truncate">{preSelectedMarket.name}</p>
-                </div>
-                <button onClick={() => navigate('/mapa')} className="text-[10px] text-gray-400 hover:text-red-500 font-bold underline cursor-pointer whitespace-nowrap">Alterar</button>
+        {/* Local (Barra Fina) */}
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-2.5 flex items-center gap-3 mb-5 border border-gray-100 dark:border-gray-700">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs text-white shadow-sm ${preSelectedMarket ? 'bg-brand-green' : 'bg-gray-400'}`}>
+                <i className={`fas ${preSelectedMarket ? 'fa-store' : 'fa-map-marker-alt'}`}></i>
             </div>
-        ) : (
-             <div className="bg-gray-50 dark:bg-gray-800 p-2 rounded-lg text-center mb-4 text-[10px] text-gray-400 border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center gap-2">
-                <i className="fas fa-info-circle"></i> Entregar em qualquer ponto parceiro.
-             </div>
-        )}
+            <div className="flex-1 overflow-hidden">
+                <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Entregar em</p>
+                <p className="text-brand-dark dark:text-white font-bold text-xs truncate">
+                  {preSelectedMarket ? preSelectedMarket.name : 'Qualquer ponto parceiro'}
+                </p>
+            </div>
+            {preSelectedMarket && <button onClick={() => navigate('/mapa')} className="text-gray-400 hover:text-red-500"><i className="fas fa-times"></i></button>}
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* GRID MAIS COMPACTO PARA MATERIAIS */}
-          <div className="grid grid-cols-5 gap-2">
-            {materials.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setSelectedMaterial(m.id)}
-                className={`
-                  flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-20 group
-                  ${selectedMaterial === m.id 
-                    ? 'border-brand-green bg-green-50 dark:bg-green-900/20 text-brand-green shadow-sm scale-105 ring-1 ring-brand-green' 
-                    : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}
-                `}
-              >
-                <i className={`fas ${m.icon} text-lg mb-1 group-hover:scale-110 transition-transform`}></i>
-                <span className="text-[9px] font-bold leading-none">{m.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* PESO COMPACTO */}
-          <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 rounded-xl border border-transparent focus-within:border-brand-green/30 transition-colors flex items-center justify-between">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Peso Estimado:</label>
-            <div className="flex items-center">
-              <input 
-                type="number" 
-                step="0.1"
-                placeholder="0.0"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="w-20 p-1 text-right text-2xl font-black bg-transparent border-b border-gray-300 focus:border-brand-green outline-none text-brand-dark dark:text-white transition-colors placeholder-gray-300"
-                required
-              />
-              <span className="text-gray-400 font-bold text-sm ml-1 mt-2">kg</span>
+        <form onSubmit={handleSubmit}>
+          
+          {/* CARROSSEL HORIZONTAL (Stories Style) - Resolve o grid de 5 */}
+          <div className="mb-6">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2 ml-1">Selecione o Material</p>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+              {materials.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setSelectedMaterial(m.id)}
+                  className={`
+                    flex-shrink-0 w-20 h-24 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all snap-start
+                    ${selectedMaterial === m.id 
+                      ? `border-brand-green bg-white shadow-md transform -translate-y-1` 
+                      : 'border-transparent bg-gray-50 dark:bg-gray-800 text-gray-400 hover:bg-gray-100'}
+                  `}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${selectedMaterial === m.id ? `${m.bg} ${m.color}` : 'bg-gray-200 dark:bg-gray-700 text-gray-400'}`}>
+                    <i className={`fas ${m.icon}`}></i>
+                  </div>
+                  <span className={`text-[10px] font-bold ${selectedMaterial === m.id ? 'text-brand-dark' : ''}`}>{m.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-xs text-center font-bold bg-red-50 p-2 rounded-lg border border-red-100">{error}</p>}
+          {/* BARRA DE AÇÃO (Input + Botão juntos) */}
+          <div className="flex items-end gap-3">
+            
+            {/* Input de Peso */}
+            <div className="flex-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Peso (kg)</label>
+              <div className="relative mt-1">
+                <input 
+                  type="number" 
+                  step="0.1"
+                  placeholder="0.0"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full h-12 pl-4 pr-8 rounded-xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-brand-green focus:bg-white dark:focus:bg-gray-900 outline-none font-bold text-lg text-brand-dark dark:text-white transition-all"
+                  required
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">kg</span>
+              </div>
+            </div>
 
-          <button 
-            type="submit"
-            disabled={!selectedMaterial || !weight || loading}
-            className={`w-full py-3 rounded-xl text-white font-bold text-sm shadow-md transition-all transform hover:-translate-y-0.5 ${
-              !selectedMaterial || !weight ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 shadow-none' : 'bg-brand-green btn-glow-green hover:scale-[1.01]'
-            }`}
-          >
-            {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Gerar Token'}
-          </button>
+            {/* Botão de Enviar */}
+            <button 
+              type="submit"
+              disabled={!selectedMaterial || !weight || loading}
+              className={`h-12 px-6 rounded-xl font-bold text-white shadow-lg transition-all flex items-center gap-2 ${
+                !selectedMaterial || !weight 
+                  ? 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed text-gray-500 shadow-none' 
+                  : 'bg-brand-green hover:bg-emerald-500 hover:shadow-brand-green/30 hover:-translate-y-0.5 w-auto flex-1 justify-center'
+              }`}
+            >
+              {loading ? <i className="fas fa-spinner fa-spin"></i> : (
+                <>
+                  <span>Gerar</span>
+                  <i className="fas fa-arrow-right"></i>
+                </>
+              )}
+            </button>
+          </div>
+
+          {error && <p className="mt-3 text-red-500 text-[10px] text-center font-bold bg-red-50 p-1.5 rounded-lg">{error}</p>}
         </form>
       </div>
     </div>
