@@ -331,7 +331,7 @@ function RegisterPage() {
                                         {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Criar Conta'}
                                     </button>
                                 )}
-                            </div>
+                            </div> 
                         </div>
                     </form>
 
