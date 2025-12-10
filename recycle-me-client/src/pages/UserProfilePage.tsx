@@ -102,7 +102,8 @@ export default function UserProfilePage() {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('recycleme_auth_token');
-        const response = await axios.get('http://localhost:3000/profile/me', { headers: { Authorization: `Bearer ${token}` } });
+        // CORREÇÃO: Uso da variável de ambiente
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/profile/me`, { headers: { Authorization: `Bearer ${token}` } });
         setUserData(response.data);
       } catch (err) { console.error(err); } finally { setLoading(false); }
     };

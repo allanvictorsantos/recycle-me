@@ -23,13 +23,15 @@ export default function MarketplacePage() {
             try {
                 const token = localStorage.getItem('recycleme_auth_token');
 
-                const resOffers = await axios.get('http://localhost:3000/market/offers', {
+                // CORREÇÃO: Uso da variável de ambiente
+                const resOffers = await axios.get(`${import.meta.env.VITE_API_URL}/market/offers`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
                 setOffers(resOffers.data);
 
                 if (token && user) {
-                    const resProfile = await axios.get('http://localhost:3000/profile/me', {
+                    // CORREÇÃO: Uso da variável de ambiente
+                    const resProfile = await axios.get(`${import.meta.env.VITE_API_URL}/profile/me`, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setCurrentPoints(resProfile.data.points);
@@ -60,7 +62,8 @@ export default function MarketplacePage() {
 
         try {
             const token = localStorage.getItem('recycleme_auth_token');
-            await axios.post('http://localhost:3000/market/redeem', { offerId: selectedOffer.id }, { headers: { Authorization: `Bearer ${token}` } });
+            // CORREÇÃO: Uso da variável de ambiente
+            await axios.post(`${import.meta.env.VITE_API_URL}/market/redeem`, { offerId: selectedOffer.id }, { headers: { Authorization: `Bearer ${token}` } });
 
             setShowConfirmModal(false);
             setShowSuccessModal(true);

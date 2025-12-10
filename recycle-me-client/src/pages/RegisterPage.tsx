@@ -54,9 +54,12 @@ function RegisterPage() {
         if (!isCnpjReady) return;
         setFetchingCnpj(true); setError(null);
         try {
-            const checkResponse = await axios.get('http://localhost:3000/markets');
+            // CORREÇÃO: Uso da variável de ambiente
+            const checkResponse = await axios.get(`${import.meta.env.VITE_API_URL}/markets`);
             const isRegistered = checkResponse.data.some((m: any) => m.cnpj.replace(/[^\d]/g, '') === cnpj.replace(/[^\d]/g, ''));
             if (isRegistered) { setError("CNPJ já cadastrado. Faça login."); setFetchingCnpj(false); return; }
+            
+            // API Externa (BrasilAPI) - MANTÉM URL
             const response = await axios.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpj.replace(/[^\d]/g, '')}`);
             setRazaoSocial(response.data.razao_social);
             setTradeName(response.data.nome_fantasia || response.data.razao_social);
@@ -73,7 +76,8 @@ function RegisterPage() {
                 password: password,
                 ...(cadastroType === 'pf' ? { email } : { cnpj: cnpj.replace(/[^\d]/g, '') })
             };
-            const response = await axios.post('http://localhost:3000/auth/login', loginData);
+            // CORREÇÃO: Uso da variável de ambiente
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, loginData);
             login(response.data.token, response.data.user);
             if (response.data.user.type === 'market') navigate('/painel-fiscal', { replace: true });
             else navigate('/mapa', { replace: true });
@@ -83,7 +87,8 @@ function RegisterPage() {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError(null); setSuccess(null); setLoading(true);
-        const url = cadastroType === 'pf' ? 'http://localhost:3000/users' : 'http://localhost:3000/markets';
+        // CORREÇÃO: Uso da variável de ambiente
+        const url = cadastroType === 'pf' ? `${import.meta.env.VITE_API_URL}/users` : `${import.meta.env.VITE_API_URL}/markets`;
         const body = cadastroType === 'pf' 
             ? { name, email, password }
             : { name: razaoSocial, tradeName: tradeName || razaoSocial, cnpj: cnpj.replace(/[^\d]/g, ''), email, password, cep: cep.replace(/[^\d]/g, ''), numero };

@@ -44,7 +44,8 @@ export default function MarketDashboard() {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('recycleme_auth_token');
-            const response = await axios.get('http://localhost:3000/transactions/market/stats', {
+            // CORREÇÃO: Uso da variável de ambiente
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/transactions/market/stats`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStats(response.data);
@@ -59,7 +60,8 @@ export default function MarketDashboard() {
     setLoading(true); setError(null); setTransaction(null); setSuccess(null);
     try {
       const token = localStorage.getItem('recycleme_auth_token');
-      const response = await axios.get(`http://localhost:3000/transactions/${tokenId}`, {
+      // CORREÇÃO: Uso da variável de ambiente
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/transactions/${tokenId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTransaction(response.data);
@@ -76,7 +78,8 @@ export default function MarketDashboard() {
     setLoading(true); setError(null);
     try {
       const token = localStorage.getItem('recycleme_auth_token');
-      await axios.patch(`http://localhost:3000/transactions/${transaction.id}/confirm`, 
+      // CORREÇÃO: Uso da variável de ambiente
+      await axios.patch(`${import.meta.env.VITE_API_URL}/transactions/${transaction.id}/confirm`, 
         { finalWeight: parseFloat(finalWeight) },
         { headers: { Authorization: `Bearer ${token}` } }
       );

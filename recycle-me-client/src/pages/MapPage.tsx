@@ -83,7 +83,8 @@ function MapPage() {
     if (!isLoaded) return;
     const fetchMarkets = async () => {
         try {
-            const response = await fetch('http://localhost:3000/markets');
+            // CORREÇÃO: Uso da variável de ambiente
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/markets`);
             if (response.ok) {
                 const data: MarketData[] = await response.json();
                 setMarkets(data.filter(m => m.latitude != null && m.longitude != null));
@@ -251,9 +252,9 @@ function MapPage() {
                       <i className="fas fa-recycle text-brand-green"></i> RECICLAR AQUI
                   </button>
                   {!directionsResponse && (
-                     <button onClick={() => calculateRoute(travelMode)} className="w-full py-3 border-2 border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-white transition-colors">
-                         Ver Rota no Mapa
-                     </button>
+                      <button onClick={() => calculateRoute(travelMode)} className="w-full py-3 border-2 border-brand-green text-brand-green font-bold rounded-xl hover:bg-brand-green hover:text-white transition-colors">
+                          Ver Rota no Mapa
+                      </button>
                   )}
               </div>
           )}

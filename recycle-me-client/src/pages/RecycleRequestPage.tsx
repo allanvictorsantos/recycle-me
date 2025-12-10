@@ -33,7 +33,8 @@ export default function RecycleRequestPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('recycleme_auth_token');
-      const response = await axios.post('http://localhost:3000/transactions/create', 
+      // CORREÇÃO: Uso da variável de ambiente
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/transactions/create`, 
         { 
           materialType: selectedMaterial, 
           weightInKg: weight,

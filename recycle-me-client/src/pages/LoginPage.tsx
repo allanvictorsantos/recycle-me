@@ -49,7 +49,8 @@ function LoginPage() {
         const bodyData = { type: loginType, password: password, ...(loginType === 'pf' ? { email } : { cnpj: cnpj.replace(/[^\d]/g, '') }) };
 
         try {
-            const response = await fetch('http://localhost:3000/auth/login', {
+            // CORREÇÃO: Uso da variável de ambiente
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData),
             });
             const data = await response.json();

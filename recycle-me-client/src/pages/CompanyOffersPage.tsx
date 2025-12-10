@@ -57,7 +57,8 @@ export default function CompanyOffersPage() {
   const fetchOffers = async () => {
     try {
       const token = localStorage.getItem('recycleme_auth_token');
-      const response = await axios.get('http://localhost:3000/market/my-offers', {
+      // CORREÇÃO: Uso da variável de ambiente
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/market/my-offers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOffers(response.data);
@@ -76,7 +77,8 @@ export default function CompanyOffersPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('recycleme_auth_token');
-      await axios.post('http://localhost:3000/market/offers', {
+      // CORREÇÃO: Uso da variável de ambiente
+      await axios.post(`${import.meta.env.VITE_API_URL}/market/offers`, {
           title, description, 
           cost: parseInt(cost), 
           image: imageType,

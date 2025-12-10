@@ -44,7 +44,7 @@ services:
     environment:
       # O Vite pega a chave do Google Maps aqui
       VITE_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_KEY}
-      VITE_API_URL: "http://localhost:3000"
+      VITE_API_URL: "http://localhost:30000"
     volumes:
       - ./recycle-me-client:/app
       - /app/node_modules
