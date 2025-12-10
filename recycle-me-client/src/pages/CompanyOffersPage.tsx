@@ -109,7 +109,6 @@ export default function CompanyOffersPage() {
       if (!offerToDelete) return;
       
       try {
-          const token = localStorage.getItem('recycleme_auth_token');
           // Se tiver rota no back: await axios.delete(`.../${offerToDelete}`);
           
           // Simulação visual (já que talvez não tenhamos DELETE no back ainda)

@@ -5,7 +5,7 @@ import ScrollToTop from './components/ScrollToTop.tsx';
 import './App.css';
 
 import { useAuth } from './context/AuthContext';
-import React from 'react'; 
+
 
 function App() {
   const { isAuthenticated, logout, user } = useAuth();
