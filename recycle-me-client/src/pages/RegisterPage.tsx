@@ -104,9 +104,7 @@ function RegisterPage() {
     };
 
     // Componente wrapper para inputs "antigos" (estilo bloco)
-    const InputWrapper = ({ disabled, children }: { disabled?: boolean, children: React.ReactNode }) => (
-        <div className={`transition-all duration-300 ${disabled ? 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md pointer-events-none' : ''}`}>{children}</div>
-    );
+ 
 
     // --- NOVO COMPONENTE: INPUT ESTILO "CLEAN" (Transparente + Borda) ---
     // Usado especificamente para os dados da empresa para não poluir o visual
