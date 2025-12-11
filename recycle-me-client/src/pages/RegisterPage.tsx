@@ -130,8 +130,21 @@ function RegisterPage() {
 
     const progressWidth = ((currentStep - 1) / (steps.length - 1)) * 100;
 
-    // ESTILO FIXO DO BOTÃO (Idêntico ao Login)
+    // ESTILO FIXO DO BOTÃO PRINCIPAL
     const buttonClass = `h-[60px] rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center`;
+
+    // --- NOVA FUNÇÃO PARA DICAS DINÂMICAS ---
+    const getStepSubtitle = () => {
+        if (cadastroType === 'pf') {
+            if (currentStep === 1) return "Vamos começar! Qual é o seu nome?";
+            if (currentStep === 2) return "Como podemos entrar em contato?";
+            if (currentStep === 3) return "Crie uma senha segura para acessar.";
+        } else {
+            if (currentStep === 1) return "Informe o CNPJ do estabelecimento.";
+            if (currentStep === 2) return "Confira o endereço e adicione o número.";
+            if (currentStep === 3) return "Defina o e-mail e senha de acesso.";
+        }
+    };
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-4 transition-colors duration-300">
@@ -152,20 +165,23 @@ function RegisterPage() {
                 {/* LADO DIREITO (Formulário) */}
                 <div className="h-full flex flex-col px-10 py-10 relative">
                     
-                    {/* Header (Mb-8 igual Login) */}
+                    {/* Header com DICA DINÂMICA */}
                     <div className="shrink-0 text-center mb-8">
                         <h1 className="text-3xl font-bold text-brand-dark dark:text-white tracking-tight">Criar Conta</h1>
-                        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-medium">Comece sua jornada sustentável</p>
+                        {/* Subtítulo dinâmico baseado na etapa atual */}
+                        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-medium animate-fadeIn key={currentStep}">
+                            {getStepSubtitle()}
+                        </p>
                     </div>
 
-                    {/* SELETOR (Mb-6, com altura compensada) */}
+                    {/* SELETOR */}
                     <div className="shrink-0 w-full flex flex-col items-center mb-6">
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full relative">
                             <button type="button" onClick={() => { setCadastroType('pf'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pf' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Pessoal</button>
                             <button type="button" onClick={() => { setCadastroType('pj'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pj' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Empresa</button>
                         </div>
                         
-                        {/* Barra de Progresso (Compacta e embutida no espaço) */}
+                        {/* Barra de Progresso */}
                         <div className="w-full mt-3 px-2 flex justify-between items-center relative h-4">
                             <div className="absolute top-1/2 left-2 right-2 h-1 bg-gray-100 dark:bg-gray-800 -z-0 -translate-y-1/2 rounded-full">
                                 <div className="h-full bg-brand-green transition-all duration-500" style={{ width: `${progressWidth}%` }}></div>
@@ -176,7 +192,7 @@ function RegisterPage() {
                         </div>
                     </div>
 
-                    {/* Placeholder Erro/Sucesso (h-[24px] igual Login) */}
+                    {/* Placeholder Erro/Sucesso */}
                     <div className="h-[24px] shrink-0 flex items-center justify-center mb-4">
                         {error && <p className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-1 rounded-full font-bold animate-shake"><i className="fas fa-exclamation-circle mr-1"></i>{error}</p>}
                         {success && <p className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full font-bold animate-pulse"><i className="fas fa-check-circle mr-1"></i>{success}</p>}
@@ -212,7 +228,10 @@ function RegisterPage() {
                                 <>
                                     {currentStep === 1 && (
                                         <div className="animate-fadeIn space-y-4">
-                                            <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center text-xs text-blue-600 dark:text-blue-400 font-bold">Buscaremos os dados automaticamente.</div>
+                                            {/* Dica visual extra para PJ */}
+                                            <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center gap-2">
+                                                <i className="fas fa-bolt"></i> Buscaremos os dados automaticamente.
+                                            </div>
                                             <InputField id="cnpj" label="CNPJ" placeholder="00.000.000/0000-00" value={cnpj} onChange={(e) => setCnpj(e.target.value)} iconClass="fa-building"/>
                                         </div>
                                     )}
@@ -243,18 +262,20 @@ function RegisterPage() {
 
                         {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) */}
                         <div className="mt-auto w-full pt-4">
-                            <div className="flex gap-3 h-[60px]"> {/* Altura fixa do container de botões */}
+                            <div className="flex gap-3 h-[60px]">
                                 {currentStep > 1 && (
+                                    /* BOTÃO VOLTAR "LIMPO" (Sem fundo de caixa cinza) */
                                     <button 
                                         type="button" 
                                         onClick={() => setCurrentStep(prev => prev - 1)} 
-                                        className="h-[60px] w-[60px] shrink-0 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-brand-dark transition-colors flex items-center justify-center shadow-lg"
+                                        className="h-[60px] w-[60px] shrink-0 rounded-2xl text-gray-400 hover:text-brand-green hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all flex items-center justify-center border-2 border-transparent hover:border-gray-100 dark:hover:border-gray-700"
                                         title="Voltar"
                                     >
                                         <i className="fas fa-arrow-left text-xl"></i>
                                     </button>
                                 )}
                                 
+                                {/* O restante do código do botão principal permanece igual */}
                                 {currentStep < 3 ? (
                                     <button 
                                         type="button" 
@@ -287,7 +308,7 @@ function RegisterPage() {
                         </div>
                     </form>
 
-                    {/* Footer Igual ao Login */}
+                    {/* Footer */}
                     <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-700 text-center shrink-0">
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Já tem conta? <Link to="/login" className="text-brand-green font-bold hover:underline ml-1">Entrar agora</Link></p>
                     </div>
