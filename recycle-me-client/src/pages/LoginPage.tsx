@@ -49,7 +49,6 @@ function LoginPage() {
         const bodyData = { type: loginType, password: password, ...(loginType === 'pf' ? { email } : { cnpj: cnpj.replace(/[^\d]/g, '') }) };
 
         try {
-            // CORREÇÃO: Uso da variável de ambiente
             const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyData),
             });
@@ -65,8 +64,8 @@ function LoginPage() {
     return (
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-4 transition-colors duration-300">
             
-            {/* CONTAINER PREMIUM (Bordas 2.5rem) com CORES ORIGINAIS */}
-            <div className="w-full max-w-6xl h-[750px] grid md:grid-cols-2 rounded-[2.5rem] shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+            {/* CONTAINER COMPACTO: h-[700px] em vez de 750px */}
+            <div className="w-full max-w-5xl h-[700px] grid md:grid-cols-2 rounded-[2.5rem] shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
 
                 <div className="hidden md:block relative h-full">
                     <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1913&auto=format&fit=crop" alt="Mãos segurando terra" className="w-full h-full object-cover absolute inset-0" />
@@ -77,15 +76,15 @@ function LoginPage() {
                     </div>
                 </div>
 
-                <div className="h-full flex flex-col px-12 py-14 relative">
+                <div className="h-full flex flex-col px-10 py-10 relative"> {/* Padding reduzido de 12/14 para 10/10 */}
                     
-                    <div className="shrink-0 text-center mb-10">
-                        <h1 className="text-4xl font-bold text-brand-dark dark:text-white tracking-tight">Acessar Conta</h1>
+                    <div className="shrink-0 text-center mb-8"> {/* Margem reduzida de 10 para 8 */}
+                        <h1 className="text-3xl font-bold text-brand-dark dark:text-white tracking-tight">Acessar Conta</h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm font-medium">Entre para gerenciar ou reciclar</p>
                     </div>
 
-                    {/* SELETOR ESTILO APPLE (Com Cores Originais) */}
-                    <div className="shrink-0 w-full flex flex-col items-center mb-8">
+                    {/* SELETOR */}
+                    <div className="shrink-0 w-full flex flex-col items-center mb-6"> {/* Margem reduzida de 8 para 6 */}
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full relative">
                             <button 
                                 type="button" 
@@ -117,9 +116,9 @@ function LoginPage() {
                         {loginSuccess && <p className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-4 py-1.5 rounded-full font-bold animate-pulse flex items-center gap-2"><i className="fas fa-check-circle"></i> Login realizado!</p>}
                     </div>
 
-                    <form onSubmit={handleSubmit} noValidate className="flex-grow flex flex-col justify-center space-y-8">
+                    <form onSubmit={handleSubmit} noValidate className="flex-grow flex flex-col justify-center space-y-6"> {/* Space-y reduzido de 8 para 6 */}
                         
-                        <div className="w-full space-y-6">
+                        <div className="w-full space-y-5"> {/* Space-y reduzido de 6 para 5 */}
                             {loginType === 'pf' ? (
                                 <div className="animate-fadeIn"><InputField id="email" label="Email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} iconClass="fa-envelope" /></div>
                             ) : (
@@ -137,7 +136,7 @@ function LoginPage() {
                             </div>
                         </div>
 
-                        <div className="mt-auto w-full pt-8">
+                        <div className="mt-auto w-full pt-4"> {/* Padding top reduzido de 8 para 4 */}
                             <button 
                                 type="submit" 
                                 disabled={loading || loginSuccess} 
@@ -148,8 +147,8 @@ function LoginPage() {
                         </div>
                     </form>
 
-                    <div className="mt-auto pt-8 border-t border-gray-100 dark:border-gray-800 text-center shrink-0">
-                        <p className="text-xs text-gray-500 font-medium">Não tem uma conta? <Link to="/cadastro" className="text-brand-green font-bold hover:underline ml-1">Cadastre-se</Link></p>
+                    <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-700 text-center shrink-0"> {/* Padding reduzido de 8 para 6 */}
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Não tem uma conta? <Link to="/cadastro" className="text-brand-green font-bold hover:underline ml-1">Cadastre-se</Link></p>
                     </div>
                 </div>
             </div>
