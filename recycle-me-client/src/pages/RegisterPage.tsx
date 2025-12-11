@@ -6,7 +6,7 @@ import { InputField } from '../components/InputField';
 
 type CadastroType = 'pf' | 'pj';
 
-// Componente Visual Limpo para dados fixos da empresa (Economiza espaço)
+// Componente Visual Limpo para dados fixos da empresa
 const UnderlinedInput = ({ label, value, onChange, iconClass, readOnly = false, placeholder }: any) => (
     <div className="relative group mb-2">
         <label className="text-[10px] uppercase font-bold tracking-widest text-gray-400 mb-1 block">{label}</label>
@@ -103,7 +103,14 @@ function RegisterPage() {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setError(null); setSuccess(null); setLoading(true);
+        setError(null); 
+        
+        // Validação final antes de enviar (caso o usuário aperte Enter)
+        if (!isPfStep3Valid) {
+            return setError("Verifique a senha e a confirmação.");
+        }
+
+        setSuccess(null); setLoading(true);
         const url = cadastroType === 'pf' ? `${import.meta.env.VITE_API_URL}/users` : `${import.meta.env.VITE_API_URL}/markets`;
         const body = cadastroType === 'pf' 
             ? { name, email, password }
@@ -124,25 +131,8 @@ function RegisterPage() {
 
     const progressWidth = ((currentStep - 1) / (steps.length - 1)) * 100;
 
-    // Helper para botão desabilitado (mesma cor do login vazio) vs habilitado (verde)
-    const isStepValid = () => {
-        if (cadastroType === 'pf') {
-            if (currentStep === 1) return isPfStep1Valid;
-            if (currentStep === 2) return isPfStep2Valid;
-            if (currentStep === 3) return isPfStep3Valid;
-        } else {
-            if (currentStep === 1) return isCnpjReady;
-            if (currentStep === 2) return numero !== '';
-            if (currentStep === 3) return isPfStep3Valid;
-        }
-        return false;
-    };
-
-    const buttonClass = `w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed ${
-        isStepValid() 
-        ? 'bg-brand-green text-white hover:bg-emerald-600 btn-glow-green' 
-        : 'bg-brand-green text-white opacity-50 cursor-not-allowed' // Padronizado com login
-    }`;
+    // ESTILO FIXO DO BOTÃO (Sempre Verde, Sempre Ativo visualmente)
+    const buttonClass = `w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed`;
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-4 transition-colors duration-300">
@@ -168,7 +158,7 @@ function RegisterPage() {
                         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-medium">Comece sua jornada sustentável</p>
                     </div>
 
-                    {/* SELETOR (Mesma posição do Login) */}
+                    {/* SELETOR */}
                     <div className="shrink-0 w-full flex flex-col items-center mb-6">
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full relative">
                             <button type="button" onClick={() => { setCadastroType('pf'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pf' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Pessoal</button>
@@ -254,7 +244,7 @@ function RegisterPage() {
                             )}
                         </div>
 
-                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto garante que fiquem no final do container de 700px) */}
+                        {/* BOTÕES FIXOS NA PARTE INFERIOR */}
                         <div className="mt-auto w-full pt-4">
                             <div className="flex gap-3">
                                 {currentStep > 1 && (
@@ -267,6 +257,7 @@ function RegisterPage() {
                                     <button 
                                         type="button" 
                                         onClick={() => { 
+                                            // Validação MANUAL ao clicar (para dar feedback)
                                             if(cadastroType === 'pf') {
                                                 if (currentStep === 1 && !isPfStep1Valid) return setError("Nome muito curto.");
                                                 if (currentStep === 2 && !isPfStep2Valid) return setError("E-mail inválido.");
@@ -274,15 +265,22 @@ function RegisterPage() {
                                                 if (currentStep === 1 && (!fetchingCnpj || !isCnpjReady)) return handleCnpjBlur();
                                                 if (currentStep === 2 && !numero) return setError("Número obrigatório.");
                                             }
+                                            // Se passou, avança
+                                            setError(null);
                                             setCurrentStep(prev => prev + 1); 
                                         }} 
-                                        disabled={!isStepValid()}
+                                        // AQUI ESTÁ A MUDANÇA: 'disabled' removido (só loading)
+                                        disabled={loading}
                                         className={buttonClass}
                                     >
                                         {cadastroType === 'pj' && currentStep === 1 ? (fetchingCnpj ? 'Buscando...' : 'Buscar') : 'Continuar'}
                                     </button>
                                 ) : (
-                                    <button type="submit" disabled={loading || !isStepValid()} className={buttonClass}>
+                                    <button 
+                                        type="submit" 
+                                        disabled={loading} // AQUI TAMBÉM: 'disabled' removido da validação
+                                        className={buttonClass}
+                                    >
                                         {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Criar Conta'}
                                     </button>
                                 )}
