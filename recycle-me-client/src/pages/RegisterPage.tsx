@@ -130,7 +130,7 @@ function RegisterPage() {
 
     const progressWidth = ((currentStep - 1) / (steps.length - 1)) * 100;
 
-    // ESTILO FIXO DO BOTÃO (Idêntico ao Login)
+    // ESTILO FIXO DO BOTÃO PRINCIPAL
     const buttonClass = `h-[60px] rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center`;
 
     // --- NOVA FUNÇÃO PARA DICAS DINÂMICAS ---
@@ -227,7 +227,6 @@ function RegisterPage() {
                                 <>
                                     {currentStep === 1 && (
                                         <div className="animate-fadeIn space-y-4">
-                                            {/* Dica visual extra para PJ */}
                                             <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/30 text-center text-xs text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center gap-2">
                                                 <i className="fas fa-bolt"></i> Buscaremos os dados automaticamente.
                                             </div>
@@ -259,11 +258,10 @@ function RegisterPage() {
                             )}
                         </div>
 
-                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) com MB-8 para subir 30px */}
-                        <div className="mt-auto w-full pt-4 mb-8"> 
+                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) com MB-[35px] para subir exatos 35px */}
+                        <div className="mt-auto w-full pt-4 mb-[35px]">
                             <div className="flex gap-3 h-[60px]">
                                 {currentStep > 1 && (
-                                    /* BOTÃO VOLTAR "LIMPO" (Sem fundo de caixa cinza) */
                                     <button 
                                         type="button" 
                                         onClick={() => setCurrentStep(prev => prev - 1)} 
@@ -274,7 +272,6 @@ function RegisterPage() {
                                     </button>
                                 )}
                                 
-                                {/* O restante do código do botão principal permanece igual */}
                                 {currentStep < 3 ? (
                                     <button 
                                         type="button" 
