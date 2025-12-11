@@ -130,7 +130,7 @@ function RegisterPage() {
 
     const progressWidth = ((currentStep - 1) / (steps.length - 1)) * 100;
 
-    // ESTILO FIXO DO BOTÃO PRINCIPAL
+    // ESTILO FIXO DO BOTÃO (Idêntico ao Login)
     const buttonClass = `h-[60px] rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center`;
 
     // --- NOVA FUNÇÃO PARA DICAS DINÂMICAS ---
@@ -168,7 +168,6 @@ function RegisterPage() {
                     {/* Header com DICA DINÂMICA */}
                     <div className="shrink-0 text-center mb-8">
                         <h1 className="text-3xl font-bold text-brand-dark dark:text-white tracking-tight">Criar Conta</h1>
-                        {/* Subtítulo dinâmico baseado na etapa atual */}
                         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-medium animate-fadeIn key={currentStep}">
                             {getStepSubtitle()}
                         </p>
@@ -260,8 +259,8 @@ function RegisterPage() {
                             )}
                         </div>
 
-                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) */}
-                        <div className="mt-auto w-full pt-4">
+                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) com MB-8 para subir 30px */}
+                        <div className="mt-auto w-full pt-4 mb-8"> 
                             <div className="flex gap-3 h-[60px]">
                                 {currentStep > 1 && (
                                     /* BOTÃO VOLTAR "LIMPO" (Sem fundo de caixa cinza) */
