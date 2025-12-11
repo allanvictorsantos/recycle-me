@@ -105,7 +105,6 @@ function RegisterPage() {
         event.preventDefault();
         setError(null); 
         
-        // Validação final antes de enviar (caso o usuário aperte Enter)
         if (!isPfStep3Valid) {
             return setError("Verifique a senha e a confirmação.");
         }
@@ -131,13 +130,13 @@ function RegisterPage() {
 
     const progressWidth = ((currentStep - 1) / (steps.length - 1)) * 100;
 
-    // ESTILO FIXO DO BOTÃO (Sempre Verde, Sempre Ativo visualmente)
-    const buttonClass = `w-full py-4 rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed`;
+    // ESTILO FIXO DO BOTÃO (Idêntico ao Login)
+    const buttonClass = `h-[60px] rounded-2xl font-black text-lg shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 bg-brand-green text-white hover:bg-emerald-600 btn-glow-green disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center`;
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-brand-cream dark:bg-brand-dark p-4 transition-colors duration-300">
             
-            {/* CONTAINER FIXO IGUAL LOGIN: h-[700px] */}
+            {/* CONTAINER FIXO: h-[700px] */}
             <div className="w-full max-w-5xl h-[700px] grid md:grid-cols-2 rounded-[2.5rem] shadow-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
 
                 {/* LADO ESQUERDO (Imagem) */}
@@ -153,43 +152,41 @@ function RegisterPage() {
                 {/* LADO DIREITO (Formulário) */}
                 <div className="h-full flex flex-col px-10 py-10 relative">
                     
-                    <div className="shrink-0 text-center mb-6">
+                    {/* Header (Mb-8 igual Login) */}
+                    <div className="shrink-0 text-center mb-8">
                         <h1 className="text-3xl font-bold text-brand-dark dark:text-white tracking-tight">Criar Conta</h1>
                         <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-medium">Comece sua jornada sustentável</p>
                     </div>
 
-                    {/* SELETOR */}
+                    {/* SELETOR (Mb-6, com altura compensada) */}
                     <div className="shrink-0 w-full flex flex-col items-center mb-6">
                         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl w-full relative">
                             <button type="button" onClick={() => { setCadastroType('pf'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pf' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Pessoal</button>
                             <button type="button" onClick={() => { setCadastroType('pj'); setCurrentStep(1); setError(null); }} className={`relative z-10 flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 ${cadastroType === 'pj' ? 'bg-white dark:bg-gray-700 text-brand-green shadow-md transform scale-[1.02]' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'}`}>Empresa</button>
                         </div>
                         
-                        {/* Barra de Progresso Compacta */}
-                        <div className="w-full mt-4 px-4 flex justify-between items-center relative">
-                            <div className="absolute top-1/2 left-4 right-4 h-1 bg-gray-100 dark:bg-gray-800 -z-0 -translate-y-1/2 rounded-full">
+                        {/* Barra de Progresso (Compacta e embutida no espaço) */}
+                        <div className="w-full mt-3 px-2 flex justify-between items-center relative h-4">
+                            <div className="absolute top-1/2 left-2 right-2 h-1 bg-gray-100 dark:bg-gray-800 -z-0 -translate-y-1/2 rounded-full">
                                 <div className="h-full bg-brand-green transition-all duration-500" style={{ width: `${progressWidth}%` }}></div>
                             </div>
                             {steps.map((step) => (
-                                <div key={step.id} className={`w-3 h-3 rounded-full border-2 box-content z-10 transition-all ${currentStep >= step.id ? 'bg-brand-green border-brand-green' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`}></div>
+                                <div key={step.id} className={`w-2.5 h-2.5 rounded-full border-2 box-content z-10 transition-all ${currentStep >= step.id ? 'bg-brand-green border-brand-green' : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600'}`}></div>
                             ))}
-                        </div>
-                        <div className="flex justify-between w-full px-2 mt-1">
-                             <span className="text-[10px] uppercase font-bold text-brand-green">{steps[currentStep-1].label}</span>
-                             <span className="text-[10px] text-gray-400">{currentStep}/{steps.length}</span>
                         </div>
                     </div>
 
-                    <div className="h-[20px] shrink-0 flex items-center justify-center mb-2">
+                    {/* Placeholder Erro/Sucesso (h-[24px] igual Login) */}
+                    <div className="h-[24px] shrink-0 flex items-center justify-center mb-4">
                         {error && <p className="text-xs text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-1 rounded-full font-bold animate-shake"><i className="fas fa-exclamation-circle mr-1"></i>{error}</p>}
                         {success && <p className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full font-bold animate-pulse"><i className="fas fa-check-circle mr-1"></i>{success}</p>}
                     </div>
 
-                    {/* FORMULÁRIO COM ESPAÇO FIXO */}
-                    <form onSubmit={handleSubmit} noValidate className="flex-grow flex flex-col h-full overflow-hidden">
+                    {/* FORMULÁRIO */}
+                    <form onSubmit={handleSubmit} noValidate className="flex-grow flex flex-col justify-between overflow-hidden">
                         
-                        {/* Área de Inputs (Expande para ocupar o meio) */}
-                        <div className="flex-grow flex flex-col justify-start space-y-4 pt-2">
+                        {/* Área de Inputs (Top Aligned) */}
+                        <div className="w-full space-y-4">
                             {/* PF */}
                             {cadastroType === 'pf' && (
                                 <>
@@ -244,12 +241,17 @@ function RegisterPage() {
                             )}
                         </div>
 
-                        {/* BOTÕES FIXOS NA PARTE INFERIOR */}
+                        {/* BOTÕES FIXOS NA PARTE INFERIOR (mt-auto) */}
                         <div className="mt-auto w-full pt-4">
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 h-[60px]"> {/* Altura fixa do container de botões */}
                                 {currentStep > 1 && (
-                                    <button type="button" onClick={() => setCurrentStep(prev => prev - 1)} className="flex-1 py-4 rounded-2xl text-sm font-bold text-gray-500 border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                        Voltar
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setCurrentStep(prev => prev - 1)} 
+                                        className="h-[60px] w-[60px] shrink-0 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-brand-dark transition-colors flex items-center justify-center shadow-lg"
+                                        title="Voltar"
+                                    >
+                                        <i className="fas fa-arrow-left text-xl"></i>
                                     </button>
                                 )}
                                 
@@ -257,7 +259,6 @@ function RegisterPage() {
                                     <button 
                                         type="button" 
                                         onClick={() => { 
-                                            // Validação MANUAL ao clicar (para dar feedback)
                                             if(cadastroType === 'pf') {
                                                 if (currentStep === 1 && !isPfStep1Valid) return setError("Nome muito curto.");
                                                 if (currentStep === 2 && !isPfStep2Valid) return setError("E-mail inválido.");
@@ -265,21 +266,19 @@ function RegisterPage() {
                                                 if (currentStep === 1 && (!fetchingCnpj || !isCnpjReady)) return handleCnpjBlur();
                                                 if (currentStep === 2 && !numero) return setError("Número obrigatório.");
                                             }
-                                            // Se passou, avança
                                             setError(null);
                                             setCurrentStep(prev => prev + 1); 
                                         }} 
-                                        // AQUI ESTÁ A MUDANÇA: 'disabled' removido (só loading)
                                         disabled={loading}
-                                        className={buttonClass}
+                                        className={`${buttonClass} flex-1`}
                                     >
                                         {cadastroType === 'pj' && currentStep === 1 ? (fetchingCnpj ? 'Buscando...' : 'Buscar') : 'Continuar'}
                                     </button>
                                 ) : (
                                     <button 
                                         type="submit" 
-                                        disabled={loading} // AQUI TAMBÉM: 'disabled' removido da validação
-                                        className={buttonClass}
+                                        disabled={loading} 
+                                        className={`${buttonClass} flex-1`}
                                     >
                                         {loading ? <i className="fas fa-spinner fa-spin"></i> : 'Criar Conta'}
                                     </button>
@@ -288,7 +287,8 @@ function RegisterPage() {
                         </div>
                     </form>
 
-                    <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-800 text-center shrink-0">
+                    {/* Footer Igual ao Login */}
+                    <div className="mt-auto pt-6 border-t border-gray-100 dark:border-gray-700 text-center shrink-0">
                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Já tem conta? <Link to="/login" className="text-brand-green font-bold hover:underline ml-1">Entrar agora</Link></p>
                     </div>
                 </div>
